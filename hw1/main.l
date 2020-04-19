@@ -2,84 +2,136 @@
     #include <string.h>
     int iterator = 0;
     int line_number = 1;
-    char input_line[256];
+    char line_content[256];
+    int source = 1;
+    int token = 1;
     void print(int token);
-    void print_error();
+    void raise_error();
+    void newline();
 
     typedef enum TYPES {
-	    DATATYPE_INT = 1, DATATYPE_DOUBLE, DATATYPE_BOOL, DATATYPE_CHAR = 4
+	    DATATYPE_INT = 1, 
+        DATATYPE_DOUBLE, 
+        DATATYPE_BOOL, 
+        DATATYPE_FLOAT,
+        DATATYPE_CHAR,
+        DATATYPE_SIGNED,
+        DATATYPE_UNSIGNED,
+        DATATYPE_LONG,
+        DATATYPE_SHORT = 9
     } TYPES;
 
     typedef enum KEYWORDS {
-        VOID = 5, CONST, KEY_NULL, FOR, DO, 
-        WHILE, BREAK, CONTINUE, IF, ELSE, 
-        RETURN, STRUCT, SWITCH, CASE, DEFAULT = 19
+        VOID = 10, KEY_NULL, FOR, DO, WHILE, 
+        BREAK, CONTINUE, IF, ELSE, AUTO, 
+        CONST, STATIC, UNION, ENUM, GOTO,
+        REGISTER, SIZEOF, TYPEDEF, VOLATILE, EXTERN,
+        RETURN, STRUCT, SWITCH, CASE, DEFAULT = 34
     } KEYWORDS;
 
     typedef enum OPERATORS {
-        PLUS = 20, MINUS, MULTIPLE, DIVIDE, MOD, 
+        PLUS = 35, MINUS, MULTIPLE, DIVIDE, MOD, 
         TWO_MINUS, TWO_PLUS, LESS, LESS_THAN, GREATER, 
         GREATER_THAN, SAME, NOT_EQUAL, EQUAL, AND, 
-        OR, NOT, BI_AND, BI_OR, BI_XOR, BI_COMPLEMENT, 
-        LEFT_SHIFT, RIGHT_SHIFT = 42
+        OR, NOT, BI_AND, BI_OR, BI_XOR, 
+        BI_COMPLEMENT, LEFT_SHIFT, RIGHT_SHIFT = 57
     } OPERATORS;
 
     typedef enum PUNCTUANTIONS {
-        COLON = 43, SEMICOLON, COMMA, DOT,
-        LEFT_BRACKET, RIGHT_BRACKET, LEFT_BRACE, RIGHT_BRACE,
-        LEFT_PERAN, RIGHT_PERAN = 53
+        COLON = 58, SEMICOLON, COMMA, DOT,
+        LEFT_SQUARE_BRACKET, RIGHT_SQUARE_BRACKET, LEFT_BRACKET, RIGHT_BRACKET,
+        LEFT_CURLY_BRACKET, RIGHT_CURLY_BRACKET = 67
     } PUNCTUANTIONS;
 
     typedef enum LIBRARY_FUNCTIONS {
-        PRINTF = 54, SCANF, GETC, GETS, GETCHAR, 
+        PRINTF = 68, SCANF, GETC, GETS, GETCHAR, 
         PUTS, PUTCHAR, CLEARERR, FOPEN, FCLOSE, 
         GETW, PUTW, FGETC, PUTC, FPUTC,
         FGETS, FPUTS, FEOF, FSEEK, FTELL,
-        REWIND, SPRINTF, SSCANF, REMOVE, FFLUSH = 69
+        REWIND, SPRINTF, SSCANF, REMOVE, FFLUSH = 92
     } LIBRARY_FUNCTIONS;
 
     typedef enum TOKEN_TYPE {
-        ID = 70, STRING, CHAR, INTEGER, DOUBLE, SCI
+        ID = 93, STRING, CHAR, INTEGER, DOUBLE, SCI
     } TOKEN_TYPE;
+
+    typedef enum OTHERS{
+        SPACE, COMMENT
+    } OTHERS;
 }
 
 
-%x VARDEF
-STRING 			        (\042[^\042\n]*\042)
-CHARACTER		        (\047[^\047\n]\047)
-MULTI_CHARACTER		    (\047[^\047\n]+\047)
-ZERO                    (0)
-INTEGER_VALID           ([1-9]+[0-9]*)
-INTEGER_INVALID         (0[0-9]+)
-IDENTIFIER		        ([_a-zA-Z][_a-zA-Z0-9]*)
+%x VARIABLE_ASSIGNMENT
+%s MULTILINE_COMMENT
+STRING 			                    (\042[^\042\n]*\042)
+CHARACTER		                    (\047[^\047\n]\047)
+MULTI_CHARACTER		                (\047[^\047\n]+\047)
+ZERO                                (0)
+INTEGER_VALID                       ([1-9]+[0-9]*)
+INTEGER_INVALID                     (0[0-9]+)
+KEYWORD		                        ("double"|"int"|"char"|"bool"|"void"|"null"|"for"|"while"|"do"|"if"|"else"|"auto"|"static"|"union"|"enum"|"goto"|"register"|"sizeof"|"typedef"|"volatile"|"extern"|"switch"|"return"|"break"|"continue"|"const"|"true"|"false"|"struct"|"case"|"default"|"printf"|"scanf"|"getc"|"gets"|"getchar"|"puts"|"putchar"|"clearerr"|"fopen"|"fclose"|"getw"|"putw"|"fgetc"|"putc"|"fputc"|"fgets"|"fputs"|"feof"|"fseek"|"ftell"|"rewind"|"sprintf"|"sscanf"|"remove"|"fflush")
+SINGLE_COMMENT	                    ("//"[^\n]*)
+IDENTIFIER		                    ([_a-zA-Z][_a-zA-Z0-9]*)
 
+SOURCE_OFF		                    ("#pragma source off")
+SOURCE_ON		                    ("#pragma source on")
+TOKEN_OFF		                    ("#pragma token off")
+TOKEN_ON	                        ("#pragma token on")
 
 %%
 
-{CHARACTER}             return CHAR;
-{MULTI_CHARACTER}       { print_error(); return;}
+{SOURCE_OFF}                        source = 0;
+{SOURCE_ON}                         source = 1;
+{TOKEN_OFF}                         token = 1;
+{TOKEN_ON}                          token = 1;
+{SINGLE_COMMENT}                    return COMMENT;
+{CHARACTER}                         return CHAR;
+{MULTI_CHARACTER}                   { raise_error(); return 0; }
 
-{STRING}                return STRING;
-{ZERO}                  return INTEGER;
-{INTEGER_VALID}	        return INTEGER;
-{INTEGER_INVALID}       { print_error(); return;}
-<VARDEF>{IDENTIFIER}    { BEGIN(INITIAL); return ID; }
+{STRING}                            return STRING;
+{ZERO}                              return INTEGER;
+{INTEGER_VALID}	                    return INTEGER;
+{INTEGER_INVALID}                   { raise_error(); return 0; }
 
-"int"           { BEGIN(VARDEF); return DATATYPE_INT; }
-"double"        { BEGIN(VARDEF); return DATATYPE_DOUBLE; }
-"bool"          { BEGIN(VARDEF); return DATATYPE_BOOL; }
-"char"          { BEGIN(VARDEF); return DATATYPE_CHAR; }
+[\n]                                { newline(); }
+[ \t\r]+                            { return SPACE; }
 
-"void"          return VOID;
-"const"         return CONST;
-"null"          return KEY_NULL;
-"for"           return FOR;
-"do"            return DO;
-"while"         return WHILE;
-"break"         return BREAK;
-"continue"      return CONTINUE;
-"if"            return IF;
-"else"          return ELSE;
+"signed"                            return DATATYPE_SIGNED;
+"unsigned"                          return DATATYPE_UNSIGNED;
+"long"                              return DATATYPE_LONG;
+"short"                             return DATATYPE_SHORT;
+"int"                               { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_INT; }
+"double"                            { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_DOUBLE; }
+"bool"                              { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_BOOL; }
+"char"                              { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_CHAR; }
+<VARIABLE_ASSIGNMENT>"="			{ BEGIN(INITIAL); return EQUAL; }
+<VARIABLE_ASSIGNMENT>";"			{ BEGIN(INITIAL); return SEMICOLON; }
+<VARIABLE_ASSIGNMENT>[ \t\r]+   	return SPACE;
+<VARIABLE_ASSIGNMENT>"*"			return MULTIPLE;
+<VARIABLE_ASSIGNMENT>{KEYWORD}	    { raise_error(); return 0; }
+<VARIABLE_ASSIGNMENT>{IDENTIFIER}   { BEGIN(INITIAL); return ID; }
+<VARIABLE_ASSIGNMENT>.			    { raise_error(); return 0; }
+
+"void"                              return VOID;
+"null"                              return KEY_NULL;
+"for"                               return FOR;
+"do"                                return DO;
+"while"                             return WHILE;
+"break"                             return BREAK;
+"continue"                          return CONTINUE;
+"if"                                return IF;
+"else"                              return ELSE;
+"auto"                              return AUTO;
+"const"                             return CONST;
+"static"                            return STATIC;
+"union"                             return UNION;
+"enum"                              return ENUM;
+"goto"                              return GOTO;
+"register"      return REGISTER;
+"sizeof"        return SIZEOF;
+"typedef"       return TYPEDEF;
+"volatile"      return VOLATILE;
+"extern"        return EXTERN;
 "return"        return RETURN;
 "struct"        return STRUCT;
 "switch"        return SWITCH;
@@ -114,12 +166,12 @@ IDENTIFIER		        ([_a-zA-Z][_a-zA-Z0-9]*)
 ";"				return SEMICOLON;
 ","				return COMMA;
 "."				return DOT;
-"["				return LEFT_BRACKET;
-"]"				return RIGHT_BRACKET;
-"("				return LEFT_PERAN;
-")"				return RIGHT_PERAN;
-"{"				return LEFT_BRACE;
-"}"				return RIGHT_BRACE;
+"["				return LEFT_SQUARE_BRACKET;
+"]"				return RIGHT_SQUARE_BRACKET;
+"("				return LEFT_BRACKET;
+")"				return RIGHT_BRACKET;
+"{"				return LEFT_CURLY_BRACKET;
+"}"				return RIGHT_CURLY_BRACKET;
 
 "printf"		return PRINTF;
 "scanf"			return SCANF;
@@ -147,18 +199,19 @@ IDENTIFIER		        ([_a-zA-Z][_a-zA-Z0-9]*)
 "remove"		return REMOVE; 
 "fflush"		return FFLUSH; 
 
+{IDENTIFIER}                        return ID;
+.                                   {raise_error(); return 0;}
 
 %%
-
 
 int yywrap() {return 1;} // yywrap() - wraps the above rule section 
 
 void print(int token) {
-    if(token >= 0 && token <= 3) printf("#token key:%s\n", yytext); //datatypes
-    if(token >= 5 && token <= 19) printf("#token key:%s\n", yytext); //keywords
-    if(token >= 20 && token <= 42) printf("#token op:%s\n", yytext); //operators
-    if(token >= 43 && token <= 53) printf("#token punc:%s\n", yytext); //punctuations
-    if(token >= 54 && token <= 69) printf("#token key:%s\n", yytext); //stdio functions
+    if(token >= 1 && token <= 9) printf("#token key:%s\n", yytext); //datatypes
+    if(token >= 10 && token <= 34) printf("#token key:%s\n", yytext); //keywords
+    if(token >= 35 && token <= 57) printf("#token op:%s\n", yytext); //operators
+    if(token >= 58 && token <= 67) printf("#token punc:%s\n", yytext); //punctuations
+    if(token >= 68 && token <= 92) printf("#token key:%s\n", yytext); //stdio functions
     if(token == ID) printf("#token id:%s\n", yytext);
     if(token == INTEGER) printf("#token integer:%s\n",yytext);
     if(token == STRING){
@@ -170,16 +223,35 @@ void print(int token) {
 		text[iterator - 1]='\0';
 		printf("#token string:%s\n",text);
 	}
+    if(token == CHAR) {
+
+    }
+    if(token == DOUBLE) {
+
+    }
+    if(token == SCI) {
+
+    }
 }
 
-void print_error() {
+void raise_error() {
     printf("Error at line %d:%s\n", line_number, yytext);
+}
+
+void newline() {
+    if(!source) {
+        memset(line_content, 0, sizeof(line_content));
+        line_number++;
+    }
+    else {
+        printf("%d: %s\n", line_number, line_content);
+    }
 }
 
 int main () {
     int token;
     while((token = yylex())) {
-		strcat(input_line, yytext);
+		strcat(line_content, yytext);
 	    print(token);
 	}
     return 0;
