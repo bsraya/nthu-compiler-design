@@ -52,49 +52,82 @@
     } LIBRARY_FUNCTIONS;
 
     typedef enum TOKEN_TYPE {
-        ID = 93, STRING, CHAR, INTEGER, DOUBLE, SCI
+        TOKEN_IDENTIFIER = 93, TOKEN_STRING, TOKEN_CHARACTER, TOKEN_INTEGER, TOKEN_DOUBLE, TOKEN_SCI_NOT
     } TOKEN_TYPE;
 
+    typedef enum CONFIGURATIONS {
+        CONFIG_SOURCEOFF = 200, CONFIG_SOURCEON, CONFIG_TOKENOFF, CONFIG_TOKENON
+    } CONFIGURATIONS;
+
     typedef enum OTHERS{
-        SPACE, COMMENT
+        OTR_SPACE = 300, OTR_COMMENT, OTR_MULTILINE_COMMENT
     } OTHERS;
 }
 
-
+/* definitions */
 %x VARIABLE_ASSIGNMENT
 %s MULTILINE_COMMENT
-STRING 			                    (\042[^\042\n]*\042)
+SOURCEOFF		                    ("#pragma source off")
+SOURCEON		                    ("#pragma source on")
+TOKENOFF		                    ("#pragma token off")
+TOKENON	                            ("#pragma token on")
+
 CHARACTER		                    (\047[^\047\n]\047)
 MULTI_CHARACTER		                (\047[^\047\n]+\047)
-ZERO                                (0)
-INTEGER_VALID                       ([1-9]+[0-9]*)
-INTEGER_INVALID                     (0[0-9]+)
+UNINFLECTED_TERM_CHAR		        (\047[^\047\n]*)
+
 KEYWORD		                        ("double"|"int"|"char"|"bool"|"void"|"null"|"for"|"while"|"do"|"if"|"else"|"auto"|"static"|"union"|"enum"|"goto"|"register"|"sizeof"|"typedef"|"volatile"|"extern"|"switch"|"return"|"break"|"continue"|"const"|"true"|"false"|"struct"|"case"|"default"|"printf"|"scanf"|"getc"|"gets"|"getchar"|"puts"|"putchar"|"clearerr"|"fopen"|"fclose"|"getw"|"putw"|"fgetc"|"putc"|"fputc"|"fgets"|"fputs"|"feof"|"fseek"|"ftell"|"rewind"|"sprintf"|"sscanf"|"remove"|"fflush")
-SINGLE_COMMENT	                    ("//"[^\n]*)
+COMMENT	                            ("//"[^\n]*)
 IDENTIFIER		                    ([_a-zA-Z][_a-zA-Z0-9]*)
 
-SOURCE_OFF		                    ("#pragma source off")
-SOURCE_ON		                    ("#pragma source on")
-TOKEN_OFF		                    ("#pragma token off")
-TOKEN_ON	                        ("#pragma token on")
+STRING 			                    (\042[^\042\n]*\042)
+UNINFLECTED_TERM_STRING             (\042[^\042\n]*)
+
+BACKSLASH                           (\\*)
+
+ZERO                                (0)
+VALID_INTEGER                       ([1-9]+[0-9]*)
+INVALID_INTEGER                     (0[0-9]+)
+
+DOUBLE 			                    ([1-9]+[0-9]*"."[0-9]+)
+ZERO_DOUBLE		                    (0.[0-9]+)
+INVALID_DOUBLE                      ([0-9]+".") 
+
+VALID_SCIENTIFIC_NOTATION           ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+)
+INVALID_SCIENTIFIC_NOTATION         ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
 
 %%
 
-{SOURCE_OFF}                        source = 0;
-{SOURCE_ON}                         source = 1;
-{TOKEN_OFF}                         token = 1;
-{TOKEN_ON}                          token = 1;
-{SINGLE_COMMENT}                    return COMMENT;
-{CHARACTER}                         return CHAR;
-{MULTI_CHARACTER}                   { raise_error(); return 0; }
+{SOURCEOFF}                         { source = 0; return CONFIG_SOURCEOFF; }
+{SOURCEON}                          { source = 1; return CONFIG_SOURCEON; }
+{TOKENOFF}                          { token = 0; return CONFIG_TOKENOFF; }
+{TOKENON}                           { token = 1; return CONFIG_TOKENON; }
 
-{STRING}                            return STRING;
-{ZERO}                              return INTEGER;
-{INTEGER_VALID}	                    return INTEGER;
-{INTEGER_INVALID}                   { raise_error(); return 0; }
+{COMMENT}                           return OTR_COMMENT;
+"/*"				                { BEGIN(MULTILINE_COMMENT); return OTR_MULTILINE_COMMENT; }
+<MULTILINE_COMMENT>[^*\n]*          return OTR_MULTILINE_COMMENT;
+<MULTILINE_COMMENT>"*"+[^*/\n]*     return OTR_MULTILINE_COMMENT;
+<MULTILINE_COMMENT>\n 		        { newline(); }
+<MULTILINE_COMMENT>"*"+"/"	        { BEGIN(INITIAL); return OTR_MULTILINE_COMMENT;}
+
+{ZERO}                              return TOKEN_INTEGER;
+{VALID_INTEGER}	                    return TOKEN_INTEGER;
+{DOUBLE}                            return TOKEN_DOUBLE;
+{ZERO_DOUBLE}                       return TOKEN_DOUBLE;
+{VALID_SCIENTIFIC_NOTATION}         return TOKEN_SCI_NOT;
+{CHARACTER}                         return TOKEN_CHARACTER;
+{STRING}                            return TOKEN_STRING;
+
+{BACKSLASH}                         { raise_error(); return 0; }
+{INVALID_INTEGER}                   { raise_error(); return 0; }
+{INVALID_DOUBLE}                    { raise_error(); return 0; }
+{INVALID_SCIENTIFIC_NOTATION}       { raise_error(); return 0; }
+{MULTI_CHARACTER}                   { raise_error(); return 0; }
+{UNINFLECTED_TERM_CHAR}             { raise_error(); return 0; }
+{UNINFLECTED_TERM_STRING}           { raise_error(); return 0; }
 
 [\n]                                { newline(); }
-[ \t\r]+                            { return SPACE; }
+[ \t\r]+                            return OTR_SPACE;
 
 "signed"                            return DATATYPE_SIGNED;
 "unsigned"                          return DATATYPE_UNSIGNED;
@@ -106,11 +139,11 @@ TOKEN_ON	                        ("#pragma token on")
 "char"                              { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_CHAR; }
 <VARIABLE_ASSIGNMENT>"="			{ BEGIN(INITIAL); return EQUAL; }
 <VARIABLE_ASSIGNMENT>";"			{ BEGIN(INITIAL); return SEMICOLON; }
-<VARIABLE_ASSIGNMENT>[ \t\r]+   	return SPACE;
+<VARIABLE_ASSIGNMENT>[ \t\r]+   	return OTR_SPACE;
 <VARIABLE_ASSIGNMENT>"*"			return MULTIPLE;
-<VARIABLE_ASSIGNMENT>{KEYWORD}	    { raise_error(); return 0; }
-<VARIABLE_ASSIGNMENT>{IDENTIFIER}   { BEGIN(INITIAL); return ID; }
-<VARIABLE_ASSIGNMENT>.			    { raise_error(); return 0; }
+<VARIABLE_ASSIGNMENT>{KEYWORD}      { raise_error(); return 0; }
+<VARIABLE_ASSIGNMENT>{IDENTIFIER}   { BEGIN(INITIAL); return TOKEN_IDENTIFIER; }
+<VARIABLE_ASSIGNMENT>.              { raise_error(); return 0; }
 
 "void"                              return VOID;
 "null"                              return KEY_NULL;
@@ -127,80 +160,80 @@ TOKEN_ON	                        ("#pragma token on")
 "union"                             return UNION;
 "enum"                              return ENUM;
 "goto"                              return GOTO;
-"register"      return REGISTER;
-"sizeof"        return SIZEOF;
-"typedef"       return TYPEDEF;
-"volatile"      return VOLATILE;
-"extern"        return EXTERN;
-"return"        return RETURN;
-"struct"        return STRUCT;
-"switch"        return SWITCH;
-"case"          return CASE;
-"default"       return DEFAULT;
+"register"                          return REGISTER;
+"sizeof"                            return SIZEOF;
+"typedef"                           return TYPEDEF;
+"volatile"                          return VOLATILE;
+"extern"                            return EXTERN;
+"return"                            return RETURN;
+"struct"                            return STRUCT;
+"switch"                            return SWITCH;
+"case"                              return CASE;
+"default"                           return DEFAULT;
 
-"+"             return PLUS;
-"-"             return MINUS;
-"*"             return MULTIPLE;
-"/"             return DIVIDE;
-"%"             return MOD;
-"++"            return TWO_PLUS;
-"--"            return TWO_MINUS;
-"<"             return LESS;
-"<="            return LESS_THAN;
-">"             return GREATER;
-">="            return GREATER_THAN;
-"=="            return SAME;
-"!="            return NOT_EQUAL;
-"="             return EQUAL;
-"&&"            return AND;
-"||"            return OR;
-"!"             return NOT;
-"&"             return BI_AND;
-"|"             return BI_OR;
-"^"             return BI_XOR;
-"~"             return BI_COMPLEMENT;
-"<<"            return LEFT_SHIFT;
-">>"            return RIGHT_SHIFT;
+"+"                                 return PLUS;
+"-"                                 return MINUS;
+"*"                                 return MULTIPLE;
+"/"                                 return DIVIDE;
+"%"                                 return MOD;
+"++"                                return TWO_PLUS;
+"--"                                return TWO_MINUS;
+"<"                                 return LESS;
+"<="                                return LESS_THAN;
+">"                                 return GREATER;
+">="                                return GREATER_THAN;
+"=="                                return SAME;
+"!="                                return NOT_EQUAL;
+"="                                 return EQUAL;
+"&&"                                return AND;
+"||"                                return OR;
+"!"                                 return NOT;
+"&"                                 return BI_AND;
+"|"                                 return BI_OR;
+"^"                                 return BI_XOR;
+"~"                                 return BI_COMPLEMENT;
+"<<"                                return LEFT_SHIFT;
+">>"                                return RIGHT_SHIFT;
 
-":"			    return COLON;
-";"				return SEMICOLON;
-","				return COMMA;
-"."				return DOT;
-"["				return LEFT_SQUARE_BRACKET;
-"]"				return RIGHT_SQUARE_BRACKET;
-"("				return LEFT_BRACKET;
-")"				return RIGHT_BRACKET;
-"{"				return LEFT_CURLY_BRACKET;
-"}"				return RIGHT_CURLY_BRACKET;
+":"			                        return COLON;
+";"				                    return SEMICOLON;
+","				                    return COMMA;
+"."				                    return DOT;
+"["				                    return LEFT_SQUARE_BRACKET;
+"]"				                    return RIGHT_SQUARE_BRACKET;
+"("				                    return LEFT_BRACKET;
+")"				                    return RIGHT_BRACKET;
+"{"				                    return LEFT_CURLY_BRACKET;
+"}"				                    return RIGHT_CURLY_BRACKET;
 
-"printf"		return PRINTF;
-"scanf"			return SCANF;
-"getc"			return GETC;
-"gets"			return GETS;
-"getchar"		return GETCHAR;
-"puts"			return PUTS;
-"putchar"		return PUTCHAR;
-"clearerr"		return CLEARERR;
-"fopen"			return FOPEN;
-"fclose"		return FCLOSE;
-"getw"			return GETW;
-"putw"			return PUTW;
-"fgetc"			return FGETC;
-"putc"			return PUTC;
-"fputc"			return FPUTC;
-"fgets"			return FGETS;
-"fputs"			return FPUTS;
-"feof"			return FEOF;
-"fseek"			return FSEEK;
-"ftell"			return FTELL;
-"rewind"		return REWIND;
-"sprintf"		return SPRINTF;
-"sscanf"		return SSCANF; 
-"remove"		return REMOVE; 
-"fflush"		return FFLUSH; 
+"printf" 		                    return PRINTF; 
+"scanf"			                    return SCANF;
+"getc"			                    return GETC;
+"gets"			                    return GETS;
+"getchar"		                    return GETCHAR;
+"puts"			                    return PUTS;
+"putchar"		                    return PUTCHAR;
+"clearerr"		                    return CLEARERR;
+"fopen"			                    return FOPEN;
+"fclose"		                    return FCLOSE;
+"getw"			                    return GETW;
+"putw"			                    return PUTW;
+"fgetc"			                    return FGETC;
+"putc"			                    return PUTC;
+"fputc"			                    return FPUTC;
+"fgets"			                    return FGETS;
+"fputs"			                    return FPUTS;
+"feof"			                    return FEOF;
+"fseek"			                    return FSEEK;
+"ftell"			                    return FTELL;
+"rewind"		                    return REWIND;
+"sprintf" 		                    return SPRINTF; 
+"sscanf"		                    return SSCANF; 
+"remove"		                    return REMOVE; 
+"fflush"		                    return FFLUSH; 
 
-{IDENTIFIER}                        return ID;
-.                                   {raise_error(); return 0;}
+{IDENTIFIER}                        return TOKEN_IDENTIFIER;
+.                                   { raise_error(); return 0; }
 
 %%
 
@@ -212,40 +245,29 @@ void print(int token) {
     if(token >= 35 && token <= 57) printf("#token op:%s\n", yytext); //operators
     if(token >= 58 && token <= 67) printf("#token punc:%s\n", yytext); //punctuations
     if(token >= 68 && token <= 92) printf("#token key:%s\n", yytext); //stdio functions
-    if(token == ID) printf("#token id:%s\n", yytext);
-    if(token == INTEGER) printf("#token integer:%s\n",yytext);
-    if(token == STRING){
-		char text[256];
-		int i;
-		for(iterator = 1; yytext[i] != '\042'; i++){
-			text[iterator - 1] = yytext[iterator];
-		}
-		text[iterator - 1]='\0';
-		printf("#token string:%s\n",text);
-	}
-    if(token == CHAR) {
-
-    }
-    if(token == DOUBLE) {
-
-    }
-    if(token == SCI) {
-
+    if (token == TOKEN_IDENTIFIER) printf("#token id:%s\n", yytext);
+    if (token == TOKEN_INTEGER) printf("#token integer:%s\n",yytext);
+    if (token ==  TOKEN_CHARACTER) printf("#token char:%s\n", yytext);
+    if (token ==  TOKEN_DOUBLE) printf("#token double:%s", yytext);
+    if (token ==  TOKEN_SCI_NOT) printf("#token sci:%s", yytext);
+    if (token ==  TOKEN_STRING) {
+        char text[256];
+        for (iterator = 1; yytext[iterator] != '\042'; iterator++) {text[iterator - 1] = yytext[iterator];}
+        text[iterator - 1]='\0';
+        printf("#token string:%s\n",text);
     }
 }
 
 void raise_error() {
     printf("Error at line %d:%s\n", line_number, yytext);
+    exit(EXIT_SUCCESS);
 }
 
 void newline() {
-    if(!source) {
-        memset(line_content, 0, sizeof(line_content));
-        line_number++;
-    }
-    else {
-        printf("%d: %s\n", line_number, line_content);
-    }
+    if(source == 1) printf("%d:%s\n", line_number, line_content);
+    
+    memset(line_content, 0, sizeof(line_content));
+    line_number++;
 }
 
 int main () {
