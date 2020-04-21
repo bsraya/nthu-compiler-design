@@ -1,10 +1,9 @@
 %top{
     #include <string.h>
-    int iterator = 0;
-    int line_number = 1;
-    char line_content[256];
     int sourceOn = 1;
     int tokenOn = 1;
+    int current_line_number = 1;
+    char current_line_content[256];
     void print(int token);
     void raise_error();
     void newline();
@@ -12,41 +11,39 @@
     typedef enum TYPES {
 	    DATATYPE_INT = 1, 
         DATATYPE_DOUBLE, 
-        DATATYPE_BOOL, 
         DATATYPE_FLOAT,
         DATATYPE_CHAR,
         DATATYPE_SIGNED,
         DATATYPE_UNSIGNED,
         DATATYPE_LONG,
-        DATATYPE_SHORT = 9
+        DATATYPE_SHORT = 8
     } TYPES;
 
     typedef enum KEYWORDS {
-        KEY_TRUE = 10, KEY_FALSE, KEY_NULL, VOID, FOR, 
-        DO, WHILE, BREAK, CONTINUE, IF, 
-        ELSE, AUTO, CONST, STATIC, UNION, 
-        ENUM, GOTO, REGISTER, SIZEOF, TYPEDEF, 
-        VOLATILE, EXTERN, RETURN, STRUCT, SWITCH, 
-        CASE, DEFAULT = 36
+        VOID = 9, FOR, DO, WHILE, BREAK, 
+        CONTINUE, IF, ELSE, AUTO, CONST, 
+        STATIC, UNION, ENUM, GOTO, REGISTER, 
+        SIZEOF, TYPEDEF, VOLATILE, EXTERN, RETURN, 
+        STRUCT, SWITCH, CASE, DEFAULT = 32
     } KEYWORDS;
 
     typedef enum OPERATORS {
-        PLUS = 37, MINUS, MULTIPLE, DIVIDE, MOD, 
+        PLUS = 33, MINUS, MULTIPLE, DIVIDE, MOD, 
         TWO_MINUS, TWO_PLUS, LESS, LESS_THAN, GREATER, 
         GREATER_THAN, SAME, NOT_EQUAL, EQUAL, AND, 
         OR, NOT, BI_AND, BI_OR, BI_XOR, 
-        BI_COMPLEMENT, LEFT_SHIFT, RIGHT_SHIFT = 59
+        BI_COMPLEMENT, LEFT_SHIFT, RIGHT_SHIFT = 55
     } OPERATORS;
 
     typedef enum PUNCTUANTIONS {
-        GRAVE_ACCENT = 60, POUND, DOLLAR, 
+        GRAVE_ACCENT = 56, POUND, DOLLAR, 
         COLON, SEMICOLON, COMMA, DOT,
         LEFT_SQUARE_BRACKET, RIGHT_SQUARE_BRACKET, LEFT_BRACKET, RIGHT_BRACKET,
-        LEFT_CURLY_BRACKET, RIGHT_CURLY_BRACKET = 72
+        LEFT_CURLY_BRACKET, RIGHT_CURLY_BRACKET, AT_SIGN = 69
     } PUNCTUANTIONS;
 
     typedef enum LIBRARY_FUNCTIONS {
-        FCLOSE = 73, CLEARERR, FEOF, FERROR, FFLUSH,
+        FCLOSE = 70, CLEARERR, FEOF, FERROR, FFLUSH,
         FGETPOS, FOPEN, FREAD, FREOPEN, FSEEK,
         FSETPOS, FTELL, FWRITE, REMOVE, RENAME,
         REWIND, SETBUF, SETVBUF, TMPFILE,
@@ -54,7 +51,7 @@
         VPRINTF, VSPRINTF, FSCANF, SCANF, SSCANF,
         FGETC, FGETS, FPUTC, FPUTS, GETC,
         GETCHAR, GETS, PUTC, PUTCHAR, PUTS, 
-        UNGETC, PERROR, GETW, PUTW = 115
+        UNGETC, PERROR, GETW, PUTW = 112
     } LIBRARY_FUNCTIONS;
 
     typedef enum TOKEN_TYPE {
@@ -73,20 +70,20 @@
 /* definitions */
 %x VARIABLE_ASSIGNMENT
 %s MULTILINE_COMMENT
-SOURCEOFF		                    (#pragma\s+source\s+off)
-SOURCEON		                    ("#pragma source on")
-TOKENOFF		                    (#pragma\s+token\s+off)
-TOKENON	                            (#pragma\s+token\s+on)
+SOURCEOFF		                    (#pragma source off)
+SOURCEON		                    (#pragma source on)
+TOKENOFF		                    (#pragma token off)
+TOKENON	                            (#pragma token on)
 
-CHARACTER		                    (\'.\')
-MULTI_CHARACTER		                (\'.+\')
-UNINFLECTED_TERM_CHAR		        (\'*)
+CHARACTER		                    (\'[^\'\n]\')
+MULTI_CHARACTER		                (\'[^\'\n]+\')
+UNINFLECTED_TERM_CHAR		        (\'[^\'\n]*)
 
-COMMENT	                            (\/\/.*)
+COMMENT	                            ("//"[^\n]*)
 IDENTIFIER		                    ([_a-zA-Z][_a-zA-Z0-9]*)
 
-STRING 			                    (\".*\")
-UNINFLECTED_TERM_STRING             (\042[^\042\n]*)
+STRING 			                    (\"[^\"\n]*\")
+UNINFLECTED_TERM_STRING             (\"[^\"\n]*)
 
 BACKSLASHES                         (\\*)
 
@@ -96,6 +93,7 @@ INVALID_INTEGER                     (0[0-9]+)
 
 DOUBLE 			                    ([1-9]+[0-9]*"."[0-9]+)
 ZERO_DOUBLE		                    (0.[0-9]+)
+NO_ZERO_DOUBLE                      (\.[0-9]+)
 INVALID_DOUBLE                      ([0-9]+".") 
 
 VALID_SCIENTIFIC_NOTATION           ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+)
@@ -104,21 +102,22 @@ INVALID_SCIENTIFIC_NOTATION         ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
 %%
 
 {SOURCEOFF}                         { sourceOn = 0; return CONFIG_SOURCEOFF; }
-{SOURCEON}                          { sourceOn = 1; return CONFIG_SOURCEON; }
 {TOKENOFF}                          { tokenOn = 0; return CONFIG_TOKENOFF; }
+{SOURCEON}                          { sourceOn = 1; return CONFIG_SOURCEON; }
 {TOKENON}                           { tokenOn = 1; return CONFIG_TOKENON; }
 
 {COMMENT}                           return OTR_COMMENT;
 "/*"				                { BEGIN(MULTILINE_COMMENT); return OTR_MULTILINE_COMMENT; }
 <MULTILINE_COMMENT>[^*\n]*          return OTR_MULTILINE_COMMENT;
 <MULTILINE_COMMENT>"*"+[^*/\n]*     return OTR_MULTILINE_COMMENT;
-<MULTILINE_COMMENT>\n 		        { newline(); }
+<MULTILINE_COMMENT>\n 		        newline(); 
 <MULTILINE_COMMENT>"*"+"/"	        { BEGIN(INITIAL); return OTR_MULTILINE_COMMENT;}
 
 {ZERO}                              return TOKEN_INTEGER;
 {VALID_INTEGER}	                    return TOKEN_INTEGER;
 {DOUBLE}                            return TOKEN_DOUBLE;
 {ZERO_DOUBLE}                       return TOKEN_DOUBLE;
+{NO_ZERO_DOUBLE}                    return TOKEN_DOUBLE;
 {VALID_SCIENTIFIC_NOTATION}         return TOKEN_SCI_NOT;
 {CHARACTER}                         return TOKEN_CHARACTER;
 {STRING}                            return TOKEN_STRING;
@@ -134,25 +133,20 @@ INVALID_SCIENTIFIC_NOTATION         ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
 [\n]                                { newline(); }
 [ \t\r]+                            return OTR_SPACE;
 
+"true"                              return TOKEN_IDENTIFIER;
+"false"                             return TOKEN_IDENTIFIER;
+"bool"                              return TOKEN_IDENTIFIER;
+"null"                              return TOKEN_IDENTIFIER;
+
 "signed"                            return DATATYPE_SIGNED;
 "unsigned"                          return DATATYPE_UNSIGNED;
 "long"                              return DATATYPE_LONG;
 "short"                             return DATATYPE_SHORT;
-"int"                               { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_INT; }
-"double"                            { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_DOUBLE; }
-"bool"                              { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_BOOL; }
-"char"                              { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_CHAR; }
-<VARIABLE_ASSIGNMENT>"="			{ BEGIN(INITIAL); return EQUAL; }
-<VARIABLE_ASSIGNMENT>";"			{ BEGIN(INITIAL); return SEMICOLON; }
-<VARIABLE_ASSIGNMENT>[ \t\r]+   	return OTR_SPACE;
-<VARIABLE_ASSIGNMENT>"*"			return MULTIPLE;
-<VARIABLE_ASSIGNMENT>{IDENTIFIER}   { BEGIN(INITIAL); return TOKEN_IDENTIFIER; }
-<VARIABLE_ASSIGNMENT>.              { raise_error(); return 0; }
+"int"                               return DATATYPE_INT;
+"double"                            return DATATYPE_DOUBLE;
+"char"                              return DATATYPE_CHAR;
 
-"true"                              return KEY_TRUE;
-"false"                             return KEY_FALSE;
 "void"                              return VOID;
-"null"                              return KEY_NULL;
 "for"                               return FOR;
 "do"                                return DO;
 "while"                             return WHILE;
@@ -214,6 +208,7 @@ INVALID_SCIENTIFIC_NOTATION         ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
 ")"				                    return RIGHT_BRACKET;
 "{"				                    return LEFT_CURLY_BRACKET;
 "}"				                    return RIGHT_CURLY_BRACKET;
+"@"                                 return AT_SIGN;
 
 "fclose"		                    return FCLOSE;
 "clearerr"		                    return CLEARERR;
@@ -264,14 +259,16 @@ INVALID_SCIENTIFIC_NOTATION         ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
 
 %%
 
-int yywrap() {return 1;} // yywrap() - wraps the above rule section 
+int yywrap() {
+    return 1;
+} // yywrap() - wraps the above rule section 
 
 void print(int token) {
-    if(token >= 1 && token <= 9) fprintf(stdout, "#token key:%s\n", yytext); //datatypes
-    if(token >= 10 && token <= 36) fprintf(stdout, "#token key:%s\n", yytext); //keywords
-    if(token >= 37 && token <= 59) fprintf(stdout, "#token op:%s\n", yytext); //operators
-    if(token >= 60 && token <= 72) fprintf(stdout, "#token punc:%s\n", yytext); //punctuations
-    if(token >= 73 && token <= 115) fprintf(stdout, "#token key:%s\n", yytext); //stdio functions
+    if(token >= 1 && token <= 8) fprintf(stdout, "#token key:%s\n", yytext); //datatypes
+    if(token >= 9 && token <= 32) fprintf(stdout, "#token key:%s\n", yytext); //keywords
+    if(token >= 33 && token <= 55) fprintf(stdout, "#token op:%s\n", yytext); //operators
+    if(token >= 56 && token <= 69) {fprintf(stdout, "#token punc:%s\n", yytext); return;} //punctuations
+    if(token >= 70 && token <= 112) fprintf(stdout, "#token key:%s\n", yytext); //stdio functions
     if(token == TOKEN_IDENTIFIER) fprintf(stdout, "#token id:%s\n", yytext);
     if(token == TOKEN_INTEGER) fprintf(stdout, "#token integer:%s\n",yytext);
     if(token == TOKEN_CHARACTER) fprintf(stdout, "#token char:%s\n", yytext);
@@ -279,31 +276,32 @@ void print(int token) {
     if(token == TOKEN_SCI_NOT) fprintf(stdout, "#token sci:%s\n", yytext);
     if(token == TOKEN_STRING) {
         char text[256];
+        int iterator = 0;
         for (iterator = 1; yytext[iterator] != '\042'; iterator++) {text[iterator - 1] = yytext[iterator];}
         text[iterator - 1]='\0';
-        fprintf(stdout, "#token string:%s\n",text);
+        fprintf(stdout, "#token string:\"%s\"\n",text);
+        return;
     }
 }
 
 void raise_error() {
-    fprintf(stdout, "Error at line %d:%s\n", line_number, yytext);
+    fprintf(stderr, "Error at line %d:%s\n", current_line_number, yytext);
     exit(EXIT_SUCCESS);
 }
 
 void newline() {
-    if(sourceOn == 1) {fprintf(stdout, "%d:%s\n", line_number, line_content);}
-    memset(line_content, 0, sizeof(line_content));
-    line_number++;
+    if(sourceOn == 1) {fprintf(stdout, "%d:%s\n", current_line_number, current_line_content);}
+    memset(current_line_content, 0, sizeof(current_line_content));
+    current_line_number++;
 }
 
 int main () {
     int token;
-    while((token = yylex())) {
-		strcat(line_content, yytext);
-        if(tokenOn) {
+    while(token = yylex()) {
+		strcat(current_line_content, yytext);
+        if(tokenOn == 1) {
             print(token);
         }
-	    
-	}
+    }
     return 0;
 }

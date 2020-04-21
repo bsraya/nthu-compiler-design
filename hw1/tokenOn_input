@@ -1,0 +1,2 @@
+#pragma token on
+char a = 'i';
