@@ -70,10 +70,10 @@
 /* definitions */
 %x VARIABLE_ASSIGNMENT
 %s MULTILINE_COMMENT
-SOURCEOFF		                    (#pragma source off)
-SOURCEON		                    (#pragma source on)
-TOKENOFF		                    (#pragma token off)
-TOKENON	                            (#pragma token on)
+SOURCEOFF		                    ([[:space:]]#pragma[[:space:]]source[[:space:]]off[[:space:]])
+SOURCEON		                    ([[:space:]]#pragma[[:space:]]source[[:space:]]on[[:space:]])
+TOKENOFF		                    ([[:space:]]#pragma[[:space:]]token[[:space:]]off[[:space:]])
+TOKENON	                            ([[:space:]]#pragma[[:space:]]token[[:space:]]on[[:space:]])
 
 CHARACTER		                    (\'[^\'\n]\')
 MULTI_CHARACTER		                (\'[^\'\n]+\')
@@ -297,7 +297,7 @@ void newline() {
 
 int main () {
     int token;
-    while(token = yylex()) {
+    while((token = yylex())) {
 		strcat(current_line_content, yytext);
         if(tokenOn == 1) {
             print(token);

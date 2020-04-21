@@ -1,0 +1,8 @@
+*.out
+*.c
+*.pdf
+scanner
+sourceOff_input
+sourceOn_input
+tokenOff_input
+tokenOn_input
