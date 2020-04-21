@@ -70,12 +70,13 @@
 /* definitions */
 %x VARIABLE_ASSIGNMENT
 %s MULTILINE_COMMENT
-SOURCEOFF		                    ([[:space:]]#pragma[[:space:]]source[[:space:]]off[[:space:]])
-SOURCEON		                    ([[:space:]]#pragma[[:space:]]source[[:space:]]on[[:space:]])
-TOKENOFF		                    ([[:space:]]#pragma[[:space:]]token[[:space:]]off[[:space:]])
-TOKENON	                            ([[:space:]]#pragma[[:space:]]token[[:space:]]on[[:space:]])
+SOURCEOFF		                    (\#pragma[[:space:]]+source[[:space:]]+off)
+SOURCEON		                    (\#pragma[[:space:]]+source[[:space:]]+on)
+TOKENOFF		                    (\#pragma[[:space:]]+token[[:space:]]+off)
+TOKENON	                            (\#pragma[[:space:]]+token[[:space:]]+on)
 
 CHARACTER		                    (\'[^\'\n]\')
+CHARACTER_SPACES                    (\'\\(b|0|n|t|r|f|v)\')
 MULTI_CHARACTER		                (\'[^\'\n]+\')
 UNINFLECTED_TERM_CHAR		        (\'[^\'\n]*)
 
@@ -120,6 +121,7 @@ INVALID_SCIENTIFIC_NOTATION         ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
 {NO_ZERO_DOUBLE}                    return TOKEN_DOUBLE;
 {VALID_SCIENTIFIC_NOTATION}         return TOKEN_SCI_NOT;
 {CHARACTER}                         return TOKEN_CHARACTER;
+{CHARACTER_SPACES}                  return TOKEN_CHARACTER;
 {STRING}                            return TOKEN_STRING;
 
 {BACKSLASHES}                       { raise_error(); return 0; }
@@ -259,6 +261,17 @@ INVALID_SCIENTIFIC_NOTATION         ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
 
 %%
 
+int main () {
+    int token;
+    while((token = yylex())) {
+		strcat(current_line_content, yytext);
+        if(tokenOn == 1) {
+            print(token);
+        }
+    }
+    return 0;
+}
+
 int yywrap() {
     return 1;
 } // yywrap() - wraps the above rule section 
@@ -276,7 +289,7 @@ void print(int token) {
     if(token == TOKEN_SCI_NOT) fprintf(stdout, "#token sci:%s\n", yytext);
     if(token == TOKEN_STRING) {
         char text[256];
-        int iterator = 0;
+        int iterator;
         for (iterator = 1; yytext[iterator] != '\042'; iterator++) {text[iterator - 1] = yytext[iterator];}
         text[iterator - 1]='\0';
         fprintf(stdout, "#token string:\"%s\"\n",text);
@@ -293,15 +306,4 @@ void newline() {
     if(sourceOn == 1) {fprintf(stdout, "%d:%s\n", current_line_number, current_line_content);}
     memset(current_line_content, 0, sizeof(current_line_content));
     current_line_number++;
-}
-
-int main () {
-    int token;
-    while((token = yylex())) {
-		strcat(current_line_content, yytext);
-        if(tokenOn == 1) {
-            print(token);
-        }
-    }
-    return 0;
 }
