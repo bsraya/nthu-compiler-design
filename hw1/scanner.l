@@ -70,10 +70,10 @@
 /* definitions */
 %x VARIABLE_ASSIGNMENT
 %s MULTILINE_COMMENT
-SOURCEOFF		                    (\#pragma[[:space:]]+source[[:space:]]+off)
-SOURCEON		                    (\#pragma[[:space:]]+source[[:space:]]+on)
-TOKENOFF		                    (\#pragma[[:space:]]+token[[:space:]]+off)
-TOKENON	                            (\#pragma[[:space:]]+token[[:space:]]+on)
+SOURCEOFF		                    (\#pragma[[:space:]]source[[:space:]]off)
+SOURCEON		                    (\#pragma[[:space:]]source[[:space:]]on)
+TOKENOFF		                    (\#pragma[[:space:]]token[[:space:]]off)
+TOKENON	                            (\#pragma[[:space:]]token[[:space:]]on)
 
 CHARACTER		                    (\'[^\'\n]\')
 CHARACTER_SPACES                    (\'\\(b|0|n|t|r|f|v)\')
@@ -261,20 +261,18 @@ INVALID_SCIENTIFIC_NOTATION         ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
 
 %%
 
+int yywrap() {return 1;} // yywrap() - wraps the above rule section 
+
 int main () {
     int token;
     while((token = yylex())) {
 		strcat(current_line_content, yytext);
-        if(tokenOn == 1) {
-            print(token);
-        }
+        if(tokenOn == 1) print(token);
     }
     return 0;
 }
 
-int yywrap() {
-    return 1;
-} // yywrap() - wraps the above rule section 
+
 
 void print(int token) {
     if(token >= 1 && token <= 8) fprintf(stdout, "#token key:%s\n", yytext); //datatypes
