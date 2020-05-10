@@ -8,7 +8,7 @@
     void raise_error();
     void newline();
 
-    typedef enum TYPES {
+    typedef enum DATATYPES {
 	    DATATYPE_INT = 1, 
         DATATYPE_DOUBLE, 
         DATATYPE_FLOAT,
@@ -17,7 +17,7 @@
         DATATYPE_UNSIGNED,
         DATATYPE_LONG,
         DATATYPE_SHORT = 8
-    } TYPES;
+    } DATATYPES;
 
     typedef enum KEYWORDS {
         VOID = 9, FOR, DO, WHILE, BREAK, 
@@ -81,7 +81,7 @@ MULTI_CHARACTER		                (\'[^\'\n]+\')
 UNINFLECTED_TERM_CHAR		        (\'[^\'\n]*)
 
 COMMENT	                            ("//"[^\n]*)
-IDENTIFIER		                    ([_a-zA-Z][_a-zA-Z0-9]*)
+IDENTIFIER		                    (^[_a-zA-Z][_a-zA-Z0-9]*)
 
 STRING 			                    (\"[^\"\n]*\")
 UNINFLECTED_TERM_STRING             (\"[^\"\n]*)
