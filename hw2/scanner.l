@@ -1,5 +1,6 @@
 %top{
     #include <string.h>
+    #include <y.tab.h>
     int sourceOn = 1;
     int tokenOn = 1;
     int current_line_number = 1;
@@ -262,17 +263,6 @@ INVALID_SCIENTIFIC_NOTATION         ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
 %%
 
 int yywrap() {return 1;} // yywrap() - wraps the above rule section 
-
-int main () {
-    int token;
-    while((token = yylex())) {
-		strcat(current_line_content, yytext);
-        if(tokenOn == 1) print(token);
-    }
-    return 0;
-}
-
-
 
 void print(int token) {
     if(token >= 1 && token <= 8) fprintf(stdout, "#token key:%s\n", yytext); //datatypes
