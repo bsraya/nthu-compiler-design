@@ -1,2 +1,2 @@
 *.c
-scanner
+./scanner
