@@ -97,6 +97,11 @@ const_direct_declare:
         const_direct_declare LEFT_BRACKET parameter_list? RIGHT_BRACKET |
         const_direct_declare LEFT_BRACKET identifier_list? RIGHT_BRACKET;
 
+no_const_variable_declaration:
+        no_const_datatype SEMICOLON
+        no_const_datatype no_const_variables SEMICOLON;
+
+
 /* Statements -> 10pts *\
 
 
