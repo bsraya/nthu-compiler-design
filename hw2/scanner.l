@@ -66,6 +66,44 @@
     typedef enum OTHERS{
         OTR_SPACE = 300, OTR_COMMENT, OTR_MULTILINE_COMMENT
     } OTHERS;
+
+    int yywrap() {return 1;} // yywrap() - wraps the above rule section 
+
+    void print(int token) {
+        if(token >= 1 && token <= 8) fprintf(stdout, "#token key:%s\n", yytext); //datatypes
+        if(token >= 9 && token <= 32) fprintf(stdout, "#token key:%s\n", yytext); //keywords
+        if(token >= 33 && token <= 55) fprintf(stdout, "#token op:%s\n", yytext); //operators
+        if(token >= 56 && token <= 69) {fprintf(stdout, "#token punc:%s\n", yytext); return;} //punctuations
+        if(token >= 70 && token <= 112) fprintf(stdout, "#token key:%s\n", yytext); //stdio functions
+        if(token == TOKEN_IDENTIFIER) fprintf(stdout, "#token id:%s\n", yytext);
+        if(token == TOKEN_INTEGER) fprintf(stdout, "#token integer:%s\n",yytext);
+        if(token == TOKEN_CHARACTER) fprintf(stdout, "#token char:%s\n", yytext);
+        if(token == TOKEN_DOUBLE) fprintf(stdout, "#token double:%s\n", yytext);
+        if(token == TOKEN_SCI_NOT) fprintf(stdout, "#token sci:%s\n", yytext);
+        if(token == TOKEN_STRING) {
+            char text[256];
+            int iterator;
+            for (iterator = 1; yytext[iterator] != '\042'; iterator++) {text[iterator - 1] = yytext[iterator];}
+            text[iterator - 1]='\0';
+            fprintf(stdout, "#token string:\"%s\"\n",text);
+        }
+    }
+
+    void raise_error() {
+        fprintf(stderr, "Error at line %d:%s\n", current_line_number, yytext);
+        exit(EXIT_SUCCESS);
+    }
+
+    void newline() {
+        if(sourceOn == 1) {fprintf(stdout, "%d:%s\n", current_line_number, current_line_content);}
+        memset(current_line_content, 0, sizeof(current_line_content));
+        current_line_number++;
+}
+
+    void yyerror(char* error_message) {
+        fprintf(stderr, "Error at line %d: %s\n", line_number, current_line);
+        exit(EXIT_SUCCESS); 
+    }
 }
 
 /* definitions */
@@ -259,38 +297,3 @@ INVALID_SCIENTIFIC_NOTATION         ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
 
 {IDENTIFIER}                        return TOKEN_IDENTIFIER;
 .                                   { raise_error(); return 0; }
-
-%%
-
-int yywrap() {return 1;} // yywrap() - wraps the above rule section 
-
-void print(int token) {
-    if(token >= 1 && token <= 8) fprintf(stdout, "#token key:%s\n", yytext); //datatypes
-    if(token >= 9 && token <= 32) fprintf(stdout, "#token key:%s\n", yytext); //keywords
-    if(token >= 33 && token <= 55) fprintf(stdout, "#token op:%s\n", yytext); //operators
-    if(token >= 56 && token <= 69) {fprintf(stdout, "#token punc:%s\n", yytext); return;} //punctuations
-    if(token >= 70 && token <= 112) fprintf(stdout, "#token key:%s\n", yytext); //stdio functions
-    if(token == TOKEN_IDENTIFIER) fprintf(stdout, "#token id:%s\n", yytext);
-    if(token == TOKEN_INTEGER) fprintf(stdout, "#token integer:%s\n",yytext);
-    if(token == TOKEN_CHARACTER) fprintf(stdout, "#token char:%s\n", yytext);
-    if(token == TOKEN_DOUBLE) fprintf(stdout, "#token double:%s\n", yytext);
-    if(token == TOKEN_SCI_NOT) fprintf(stdout, "#token sci:%s\n", yytext);
-    if(token == TOKEN_STRING) {
-        char text[256];
-        int iterator;
-        for (iterator = 1; yytext[iterator] != '\042'; iterator++) {text[iterator - 1] = yytext[iterator];}
-        text[iterator - 1]='\0';
-        fprintf(stdout, "#token string:\"%s\"\n",text);
-    }
-}
-
-void raise_error() {
-    fprintf(stderr, "Error at line %d:%s\n", current_line_number, yytext);
-    exit(EXIT_SUCCESS);
-}
-
-void newline() {
-    if(sourceOn == 1) {fprintf(stdout, "%d:%s\n", current_line_number, current_line_content);}
-    memset(current_line_content, 0, sizeof(current_line_content));
-    current_line_number++;
-}
