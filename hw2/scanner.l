@@ -1,6 +1,5 @@
 %top{
     #include <string.h>
-    #include <y.tab.h>
     int sourceOn = 1;
     int tokenOn = 1;
     int current_line_number = 1;
@@ -9,42 +8,41 @@
     void raise_error();
     void newline();
 
-    typedef enum DATATYPES {
+    typedef enum DATATYPE {
 	    DATATYPE_INT = 1, 
         DATATYPE_DOUBLE, 
         DATATYPE_FLOAT,
         DATATYPE_CHAR,
-        DATATYPE_SIGNED,
-        DATATYPE_UNSIGNED,
         DATATYPE_LONG,
-        DATATYPE_SHORT = 8
-    } DATATYPES;
+        DATATYPE_BOOL,
+        DATATYPE_SHORT = 7
+    } DATATYPE;
 
-    typedef enum KEYWORDS {
-        VOID = 9, FOR, DO, WHILE, BREAK, 
+    typedef enum KEYWORD {
+        VOID = 8, FOR, DO, WHILE, BREAK, 
         CONTINUE, IF, ELSE, AUTO, CONST, 
         STATIC, UNION, ENUM, GOTO, REGISTER, 
         SIZEOF, TYPEDEF, VOLATILE, EXTERN, RETURN, 
-        STRUCT, SWITCH, CASE, DEFAULT = 32
-    } KEYWORDS;
+        STRUCT, SWITCH, CASE, DEFAULT = 31
+    } KEYWORD;
 
-    typedef enum OPERATORS {
-        PLUS = 33, MINUS, MULTIPLE, DIVIDE, MOD, 
+    typedef enum OPERATOR {
+        PLUS = 32, MINUS, MULTIPLE, DIVIDE, MOD, 
         TWO_MINUS, TWO_PLUS, LESS, LESS_THAN, GREATER, 
         GREATER_THAN, SAME, NOT_EQUAL, EQUAL, AND, 
         OR, NOT, BI_AND, BI_OR, BI_XOR, 
-        BI_COMPLEMENT, LEFT_SHIFT, RIGHT_SHIFT = 55
-    } OPERATORS;
+        BI_COMPLEMENT, LEFT_SHIFT, RIGHT_SHIFT = 54
+    } OPERATOR;
 
-    typedef enum PUNCTUANTIONS {
-        GRAVE_ACCENT = 56, POUND, DOLLAR, 
+    typedef enum PUNCTUANTION {
+        GRAVE_ACCENT = 55, POUND, DOLLAR, 
         COLON, SEMICOLON, COMMA, DOT,
         LEFT_SQUARE_BRACKET, RIGHT_SQUARE_BRACKET, LEFT_BRACKET, RIGHT_BRACKET,
-        LEFT_CURLY_BRACKET, RIGHT_CURLY_BRACKET, AT_SIGN = 69
-    } PUNCTUANTIONS;
+        LEFT_CURLY_BRACKET, RIGHT_CURLY_BRACKET, AT_SIGN = 68
+    } PUNCTUANTION;
 
-    typedef enum LIBRARY_FUNCTIONS {
-        FCLOSE = 70, CLEARERR, FEOF, FERROR, FFLUSH,
+    typedef enum LIBRARY_FUNCTION {
+        FCLOSE = 69, CLEARERR, FEOF, FERROR, FFLUSH,
         FGETPOS, FOPEN, FREAD, FREOPEN, FSEEK,
         FSETPOS, FTELL, FWRITE, REMOVE, RENAME,
         REWIND, SETBUF, SETVBUF, TMPFILE,
@@ -52,58 +50,24 @@
         VPRINTF, VSPRINTF, FSCANF, SCANF, SSCANF,
         FGETC, FGETS, FPUTC, FPUTS, GETC,
         GETCHAR, GETS, PUTC, PUTCHAR, PUTS, 
-        UNGETC, PERROR, GETW, PUTW = 112
-    } LIBRARY_FUNCTIONS;
+        UNGETC, PERROR, GETW, PUTW = 111
+    } LIBRARY_FUNCTION;
+
+    typedef enum RESERVED_WORD {
+        RESVRD_TRUE = 112, RESVRD_FALSE = 113, RESVRD_NULL = 114
+    } RESERVED_WORD;
 
     typedef enum TOKEN_TYPE {
         TOKEN_IDENTIFIER = 150, TOKEN_STRING, TOKEN_CHARACTER, TOKEN_INTEGER, TOKEN_DOUBLE, TOKEN_SCI_NOT
     } TOKEN_TYPE;
 
-    typedef enum CONFIGURATIONS {
+    typedef enum CONFIGURATION {
         CONFIG_SOURCEOFF = 200, CONFIG_SOURCEON, CONFIG_TOKENOFF, CONFIG_TOKENON
-    } CONFIGURATIONS;
+    } CONFIGURATION;
 
-    typedef enum OTHERS{
+    typedef enum OTHER{
         OTR_SPACE = 300, OTR_COMMENT, OTR_MULTILINE_COMMENT
     } OTHERS;
-
-    int yywrap() {return 1;} // yywrap() - wraps the above rule section 
-
-    void print(int token) {
-        if(token >= 1 && token <= 8) fprintf(stdout, "#token key:%s\n", yytext); //datatypes
-        if(token >= 9 && token <= 32) fprintf(stdout, "#token key:%s\n", yytext); //keywords
-        if(token >= 33 && token <= 55) fprintf(stdout, "#token op:%s\n", yytext); //operators
-        if(token >= 56 && token <= 69) {fprintf(stdout, "#token punc:%s\n", yytext); return;} //punctuations
-        if(token >= 70 && token <= 112) fprintf(stdout, "#token key:%s\n", yytext); //stdio functions
-        if(token == TOKEN_IDENTIFIER) fprintf(stdout, "#token id:%s\n", yytext);
-        if(token == TOKEN_INTEGER) fprintf(stdout, "#token integer:%s\n",yytext);
-        if(token == TOKEN_CHARACTER) fprintf(stdout, "#token char:%s\n", yytext);
-        if(token == TOKEN_DOUBLE) fprintf(stdout, "#token double:%s\n", yytext);
-        if(token == TOKEN_SCI_NOT) fprintf(stdout, "#token sci:%s\n", yytext);
-        if(token == TOKEN_STRING) {
-            char text[256];
-            int iterator;
-            for (iterator = 1; yytext[iterator] != '\042'; iterator++) {text[iterator - 1] = yytext[iterator];}
-            text[iterator - 1]='\0';
-            fprintf(stdout, "#token string:\"%s\"\n",text);
-        }
-    }
-
-    void raise_error() {
-        fprintf(stderr, "Error at line %d:%s\n", current_line_number, yytext);
-        exit(EXIT_SUCCESS);
-    }
-
-    void newline() {
-        if(sourceOn == 1) {fprintf(stdout, "%d:%s\n", current_line_number, current_line_content);}
-        memset(current_line_content, 0, sizeof(current_line_content));
-        current_line_number++;
-}
-
-    void yyerror(char* error_message) {
-        fprintf(stderr, "Error at line %d: %s\n", line_number, current_line);
-        exit(EXIT_SUCCESS); 
-    }
 }
 
 /* definitions */
@@ -120,7 +84,7 @@ MULTI_CHARACTER		                (\'[^\'\n]+\')
 UNINFLECTED_TERM_CHAR		        (\'[^\'\n]*)
 
 COMMENT	                            ("//"[^\n]*)
-IDENTIFIER		                    (^[_a-zA-Z][_a-zA-Z0-9]*)
+IDENTIFIER		                    ([_a-zA-Z][_a-zA-Z0-9]*)
 
 STRING 			                    (\"[^\"\n]*\")
 UNINFLECTED_TERM_STRING             (\"[^\"\n]*)
@@ -138,6 +102,8 @@ INVALID_DOUBLE                      ([0-9]+".")
 
 VALID_SCIENTIFIC_NOTATION           ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+)
 INVALID_SCIENTIFIC_NOTATION         ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
+
+LIST_OF_KEYWORDS             		("double"|"int"|"char"|"bool"|"void"|"null"|"for"|"while"|"do"|"if"|"else"|"switch"|"return"|"break"|"continue"|"const"|"true"|"false"|"struct"|"case"|"default"|"printf"|"scanf"|"getc"|"gets"|"getchar"|"puts"|"putchar"|"clearerr"|"fopen"|"fclose"|"getw"|"putw"|"fgetc"|"putc"|"fputc"|"fgets"|"fputs"|"feof"|"fseek"|"ftell"|"rewind"|"sprintf"|"sscanf"|"remove"|"fflush")
 
 %%
 
@@ -174,18 +140,23 @@ INVALID_SCIENTIFIC_NOTATION         ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
 [\n]                                { newline(); }
 [ \t\r]+                            return OTR_SPACE;
 
-"true"                              return TOKEN_IDENTIFIER;
-"false"                             return TOKEN_IDENTIFIER;
-"bool"                              return TOKEN_IDENTIFIER;
-"null"                              return TOKEN_IDENTIFIER;
+"true"                              return RESVRD_TRUE;
+"false"                             return RESVRD_FALSE;
+"null"                              return RESVRD_NULL;
 
-"signed"                            return DATATYPE_SIGNED;
-"unsigned"                          return DATATYPE_UNSIGNED;
-"long"                              return DATATYPE_LONG;
-"short"                             return DATATYPE_SHORT;
-"int"                               return DATATYPE_INT;
-"double"                            return DATATYPE_DOUBLE;
-"char"                              return DATATYPE_CHAR;
+"bool"                              { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_BOOL; }
+"long"                              { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_LONG; }
+"short"                             { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_SHORT; }
+"int"                               { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_INT; }
+"double"                            { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_DOUBLE; }
+"char"                              { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_CHAR; }
+<VARIABLE_ASSIGNMENT>"="			{ BEGIN(INITIAL); return EQUAL; }
+<VARIABLE_ASSIGNMENT>";"			{ BEGIN(INITIAL); return SEMICOLON; }
+<VARIABLE_ASSIGNMENT>[ \t\r]+   	return OTR_SPACE;
+<VARIABLE_ASSIGNMENT>"*"			return MULTIPLE;
+<VARIABLE_ASSIGNMENT>{LIST_OF_KEYWORDS}	    { raise_error(); return 0; }
+<VARIABLE_ASSIGNMENT>{IDENTIFIER}   { BEGIN(INITIAL); return TOKEN_IDENTIFIER; }
+<VARIABLE_ASSIGNMENT>.			    { raise_error(); return 0; }
 
 "void"                              return VOID;
 "for"                               return FOR;
@@ -297,3 +268,50 @@ INVALID_SCIENTIFIC_NOTATION         ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
 
 {IDENTIFIER}                        return TOKEN_IDENTIFIER;
 .                                   { raise_error(); return 0; }
+
+%%
+
+int yywrap() {return 1;} // yywrap() - wraps the above rule section 
+
+int main () {
+    int token;
+    while((token = yylex())) {
+		strcat(current_line_content, yytext);
+        if(tokenOn == 1) print(token);
+    }
+    return 0;
+}
+
+
+
+void print(int token) {
+    if(token >= 1 && token <= 7) fprintf(stdout, "#token key:%s\n", yytext); //datatypes
+    if(token >= 8 && token <= 31) fprintf(stdout, "#token key:%s\n", yytext); //keywords
+    if(token >= 32 && token <= 54) fprintf(stdout, "#token op:%s\n", yytext); //operators
+    if(token >= 55 && token <= 68) {fprintf(stdout, "#token punc:%s\n", yytext); return;} //punctuations
+    if(token >= 69 && token <= 111) fprintf(stdout, "#token key:%s\n", yytext); //stdio functions
+    if(token >= 112 && token <= 114) fprintf(stdout, "#token key:%s\n", yytext);
+    if(token == TOKEN_IDENTIFIER) fprintf(stdout, "#token id:%s\n", yytext);
+    if(token == TOKEN_INTEGER) fprintf(stdout, "#token integer:%s\n",yytext);
+    if(token == TOKEN_CHARACTER) fprintf(stdout, "#token char:%s\n", yytext);
+    if(token == TOKEN_DOUBLE) fprintf(stdout, "#token double:%s\n", yytext);
+    if(token == TOKEN_SCI_NOT) fprintf(stdout, "#token sci:%s\n", yytext);
+    if(token == TOKEN_STRING) {
+        char text[256];
+        int iterator;
+        for (iterator = 1; yytext[iterator] != '\042'; iterator++) {text[iterator - 1] = yytext[iterator];}
+        text[iterator - 1]='\0';
+        fprintf(stdout, "#token string:\"%s\"\n",text);
+    }
+}
+
+void raise_error() {
+    fprintf(stderr, "Error at line %d:%s\n", current_line_number, yytext);
+    exit(EXIT_SUCCESS);
+}
+
+void newline() {
+    if(sourceOn == 1) {fprintf(stdout, "%d:%s\n", current_line_number, current_line_content);}
+    memset(current_line_content, 0, sizeof(current_line_content));
+    current_line_number++;
+}
