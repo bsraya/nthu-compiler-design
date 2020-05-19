@@ -31,18 +31,35 @@ int main () {
 
 start: declaration function;
 
-datatype: DATATYPE_INT 
-        | DATATYPE_DOUBLE 
-        | DATATYPE_FLOAT 
-        | DATATYPE_CHAR;
+datatype: 
+        DATATYPE_INT | 
+        DATATYPE_DOUBLE | 
+        DATATYPE_FLOAT | 
+        DATATYPE_CHAR;
 
-const_datatype: qualifier datatype;
+const_datatype: CONST datatype;
 
 no_const_datatype:
-        datatype |
-        datatype no_const_datatype;
+        datatype no_const_datatype |
+        datatype;
 
-qualifier: CONST;
+declaration:
+        declaration_with_const |
+        declaration_without_const;
+
+statement:
+        labeled_statement |
+        compound_statement |
+        expression_statement | 
+        selection_statement |
+        iteration_statement;
+
+
+skip: 
+        RETURN expression SEMICOLON | 
+        CONTINUE SEMICOLON | 
+        BREAK SEMICOLON | 
+        RETURN SEMICOLON;
 
 unary_operator: 
         BI_AND | 
@@ -50,15 +67,10 @@ unary_operator:
         OP_MINUS | 
         OP_NOT;
 
-constant: TOKEN_INTEGER 
-        | TOKEN_DOUBLE 
-        | TOKEN_SCI_NOT; 
-
-skip: 
-        RETURN expression SEMICOLON | 
-        CONTINUE SEMICOLON | 
-        BREAK SEMICOLON | 
-        RETURN SEMICOLON;
+constant: 
+        TOKEN_INTEGER | 
+        TOKEN_DOUBLE | 
+        TOKEN_SCI_NOT; 
 
 /* Scalar declaration without initialization -> 10pts */
 scalar_declaration: 
@@ -69,38 +81,52 @@ scalar_declaration:
 
 
 /* Function declaration -> 10pts *\
+function_definition:;
 
+
+function_declaration: ;
 
 /* Expression -> 30pts (precedence & associativity) *\
-expression:
-    ;
+expression:;
 
 /* Variable declaration -> 10pts (Scalar, Array, and Const declaration with initialization) *\
 const_variable_declaration: 
-          const_datatype SEMICOLON /* const int; */ |
-          const_datatype const_variables_declaration SEMICOLON; /* const int = 1;*/
+        const_datatype SEMICOLON |
+        const_datatype const_variables SEMICOLON;
 
 const_variables:
-        /* declaration of one constant variable */
-        const_variable | 
-        /* declaration of multiple constant variables in a line */
-        const_varibles COMMA const_variable; 
+        const_varibles COMMA const_variable |
+        const_variable;
 
 const_variable:
-        const_direct_declare EQUAL initializer|
+        const_direct_declare EQUAL initializer |
         const_direct_declare;
 
 const_direct_declare:
-        TOKEN_IDENTIFIER |
-        LEFT_BRACKET const_direct_declare RIGHT_BRACKET | 
-        const_direct_declare LEFT_BRACKET RIGHT_BRACKET |
-        const_direct_declare LEFT_BRACKET parameter_list? RIGHT_BRACKET |
         const_direct_declare LEFT_BRACKET identifier_list? RIGHT_BRACKET;
+        const_direct_declare LEFT_BRACKET parameter_list? RIGHT_BRACKET |
+        const_direct_declare LEFT_BRACKET RIGHT_BRACKET |
+        LEFT_BRACKET const_direct_declare RIGHT_BRACKET | 
+        TOKEN_IDENTIFIER;
 
 no_const_variable_declaration:
-        no_const_datatype SEMICOLON
-        no_const_datatype no_const_variables SEMICOLON;
+        no_const_datatype no_const_variables SEMICOLON |
+        no_const_datatype SEMICOLON;
+        
+no_const_variables: 
+        no_const_variables COMMA no_const_variable |
+        no_const_variable;
 
+no_const_variable: 
+        no_const_direct_declare EQUAL initializer |
+        no_const_direct_declare;
+
+no_const_direct_declare: 
+        no-const_direct_declare LEFT_BRACKET identifier_list? RIGHT_BRACKET |
+        no_const_direct_declare LEFT_BRACKET parameter_list? RIGHT_BRACKET |
+        no_const_direct_declare LEFT_BRACKET RIGHT_BRACKET |
+        LEFT_BRACKET no_const_direct_declare RIGHT_BRACKET |
+        TOKEN_IDENTIFIER; 
 
 /* Statements -> 10pts *\
 
