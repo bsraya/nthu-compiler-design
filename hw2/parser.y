@@ -29,48 +29,46 @@ int main () {
 
 %%
 
-start: declaration function;
+start: 
+        declaration function
+        ;
 
 datatype: 
         DATATYPE_INT | 
         DATATYPE_DOUBLE | 
         DATATYPE_FLOAT | 
-        DATATYPE_CHAR;
+        DATATYPE_CHAR
+        ;
 
-const_datatype: CONST datatype;
+const_datatype: 
+        CONST datatype
+        ;
 
-no_const_datatype:
-        datatype no_const_datatype |
-        datatype;
+declarations:
+        declarations declaration |
+        declaration
+        ;
 
 declaration:
         declaration_with_const |
-        declaration_without_const;
-
-statement:
-        labeled_statement |
-        compound_statement |
-        expression_statement | 
-        selection_statement |
-        iteration_statement;
-
-
-skip: 
-        RETURN expression SEMICOLON | 
-        CONTINUE SEMICOLON | 
-        BREAK SEMICOLON | 
-        RETURN SEMICOLON;
+        declaration_without_const
+        ;
 
 unary_operator: 
         BI_AND | 
         OP_PLUS | 
         OP_MINUS | 
-        OP_NOT;
+        OP_NOT
+        ;
 
 constant: 
         TOKEN_INTEGER | 
         TOKEN_DOUBLE | 
-        TOKEN_SCI_NOT; 
+        TOKEN_SCI_NOT
+        ; 
+
+initializer: 
+        ;
 
 /* Scalar declaration without initialization -> 10pts */
 scalar_declaration: 
@@ -91,8 +89,8 @@ expression:;
 
 /* Variable declaration -> 10pts (Scalar, Array, and Const declaration with initialization) *\
 const_variable_declaration: 
-        const_datatype SEMICOLON |
-        const_datatype const_variables SEMICOLON;
+        const_datatype const_variables SEMICOLON |
+        const_datatype SEMICOLON ;
 
 const_variables:
         const_varibles COMMA const_variable |
@@ -110,8 +108,8 @@ const_direct_declare:
         TOKEN_IDENTIFIER;
 
 no_const_variable_declaration:
-        no_const_datatype no_const_variables SEMICOLON |
-        no_const_datatype SEMICOLON;
+        datatype no_const_variables SEMICOLON |
+        datatype SEMICOLON;
         
 no_const_variables: 
         no_const_variables COMMA no_const_variable |
@@ -122,36 +120,116 @@ no_const_variable:
         no_const_direct_declare;
 
 no_const_direct_declare: 
-        no-const_direct_declare LEFT_BRACKET identifier_list? RIGHT_BRACKET |
+        no_const_direct_declare LEFT_BRACKET identifier_list? RIGHT_BRACKET |
         no_const_direct_declare LEFT_BRACKET parameter_list? RIGHT_BRACKET |
         no_const_direct_declare LEFT_BRACKET RIGHT_BRACKET |
         LEFT_BRACKET no_const_direct_declare RIGHT_BRACKET |
         TOKEN_IDENTIFIER; 
 
+identifiers:
+        ;
+
+parameters:
+        ;
+
+
+
+
+
+
+
 /* Statements -> 10pts *\
+constant_expression:
+        TOKEN_INTEGER |
+        TOKEN_CHARACTER
+        ;
+
+statement:
+        compound_statement |
+        expression_statement | 
+        selection_statement |
+        iteration_statement
+        ;
+
+statements: 
+        statements statement |
+        statement
+        ;
+
+compound_statement:
+        /*
+
+        */
+
+        ;
+
+selection_statement:
+        IF LEFT_BRACKET expression RIGHT_BRACKET statements ELSE statements|
+        IF LEFT_BRACKET expression RIGHT_BRACKET statements |
+        SWITCH LEFT_BRACKET RIGHT_BRACKET LEFT_CURLY_BRACKET switch_statement RIGHT_BRACKET
+        ;
+
+switch_statement: 
+        cases_without_default |
+        cases_with_default
+        ;
+
+cases_with_default:
+        case_statement default_statement
+        ;
+
+cases_without_default: 
+        cases 
+        ;
+
+cases:
+        cases case_statement |
+        case_statement
+        ;
+
+case_statement:
+        CASE constant_expression COLON statements
+        ;
+
+default_statement:
+        DEFAULT COLON statements
+        ;
+
+iteration_statement:
+        /*
+                while(expression) {statement; statement; statement;}
+                do {statement; statement; statement;} while(expression)
+                for(expression; expression; expression) {statement; statement; statement;}
+        */
+        WHILE LEFT_BRACKET expression RIGHT_BRACKET statements;
+        DO LEFT_CURLY_BRACKET statements RIGHT_CURLY_BRACKET WHILE LEFT_BRACKET expression RIGHT_BRACKET
+        FOR LEFT_BRACKET expressions RIGHT_BRACKET LEFT_CURLY_BRACKET statements RIGHT_CURLY_BRACKET
+        ;
+
+skip: 
+        RETURN expression SEMICOLON | 
+        CONTINUE SEMICOLON | 
+        BREAK SEMICOLON | 
+        RETURN SEMICOLON;
+
+
+
+/* expressions */
+expression_statement:
+        expression SEMICOLON |
+        SEMICOLON
+        ;
+
+expression:
+        
+        ;
+
+
+
+
 
 
 /* Function definition -> 10pts *\
-/* start of SWITCH */
-switch_content: 
-        one_or_more_cases
-	| one_or_more_cases default_statement
-	;
-
-one_or_more_cases: case_statement
-	| one_or_more_cases case_statement
-	;
-
-case_statement: 
-        CASE switch_case_int_char COLON zero_or_more_statement;
-
-default_statement: 
-        KEY_DEFAULT COLON zero_or_more_statement;
-
-switch_case_int_char: 
-        TOKEN_IDENTIFIER | 
-        TOKEN_CHARACTER;
-/* end of SWITCH */
 
 declaration: 
         declaration external_declaration | ;
