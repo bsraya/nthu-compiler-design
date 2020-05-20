@@ -67,69 +67,102 @@ constant:
         TOKEN_SCI_NOT
         ; 
 
-initializer: 
+initializers: 
+        initializers COMMA designation initializer |
+        initializers COMMA initializer |
+        designation initializer |
+        initializer
         ;
+
+initializer:
+        LEFT_CURLY_BRACKET RIGHT_CURLY_BRACKET |
+        LEFT_CURLY_BRACKET initializers COMMA RIGHT_CURLY_BRACKET
+        ;
+
 
 /* Scalar declaration without initialization -> 10pts */
 scalar_declaration: 
-        scalar_with_const /* only for variables */ | 
-        scalar_wihtout_const; /* variables & array */
-
+        scalar_with_const | /* only for variables */
+        scalar_wihtout_const /* variables & array */
+        ;
 /* Array declaration without initialization -> 10pts *\
 
 
 /* Function declaration -> 10pts *\
-function_definition:;
+function_definition:
+        no_const_variable_declaration no_const_direct_declare declarations compound_statement|
+        no_const_variable_declaration no_const_direct_declare compound_statement |
+        VOID no_const_direct_declare declarations compound_statement |
+        VOID no_const_direct_declare compound_statement
+        ;
 
 
 function_declaration: ;
 
 /* Expression -> 30pts (precedence & associativity) *\
-expression:;
+expression:
+        ;
 
 /* Variable declaration -> 10pts (Scalar, Array, and Const declaration with initialization) *\
 const_variable_declaration: 
         const_datatype const_variables SEMICOLON |
-        const_datatype SEMICOLON ;
+        const_datatype SEMICOLON
+        ;
 
 const_variables:
         const_varibles COMMA const_variable |
-        const_variable;
+        const_variable
+        ;
 
 const_variable:
         const_direct_declare EQUAL initializer |
-        const_direct_declare;
+        const_direct_declare
+        ;
 
 const_direct_declare:
-        const_direct_declare LEFT_BRACKET identifier_list? RIGHT_BRACKET;
-        const_direct_declare LEFT_BRACKET parameter_list? RIGHT_BRACKET |
+        const_direct_declare LEFT_BRACKET identifiers RIGHT_BRACKET;
+        const_direct_declare LEFT_BRACKET parameters RIGHT_BRACKET |
         const_direct_declare LEFT_BRACKET RIGHT_BRACKET |
         LEFT_BRACKET const_direct_declare RIGHT_BRACKET | 
-        TOKEN_IDENTIFIER;
+        TOKEN_IDENTIFIER
+        ;
 
 no_const_variable_declaration:
         datatype no_const_variables SEMICOLON |
-        datatype SEMICOLON;
+        datatype SEMICOLON
+        ;
         
 no_const_variables: 
         no_const_variables COMMA no_const_variable |
-        no_const_variable;
+        no_const_variable
+        ;
 
 no_const_variable: 
         no_const_direct_declare EQUAL initializer |
-        no_const_direct_declare;
+        no_const_direct_declare
+        ;
 
 no_const_direct_declare: 
-        no_const_direct_declare LEFT_BRACKET identifier_list? RIGHT_BRACKET |
-        no_const_direct_declare LEFT_BRACKET parameter_list? RIGHT_BRACKET |
+        no_const_direct_declare LEFT_BRACKET identifiers RIGHT_BRACKET |
+        no_const_direct_declare LEFT_BRACKET parameters RIGHT_BRACKET |
         no_const_direct_declare LEFT_BRACKET RIGHT_BRACKET |
         LEFT_BRACKET no_const_direct_declare RIGHT_BRACKET |
-        TOKEN_IDENTIFIER; 
+        TOKEN_IDENTIFIER
+        ; 
 
 identifiers:
+        identifiers COMMA TOKEN_IDENTIFIER |
+        TOKEN_IDENTIFIER
         ;
 
 parameters:
+        parameters COMMA parameter_declaration |
+        parameter_declaration
+        ;
+
+parameter_declaration:
+        no_const_variable_declaration no_const_direct_declare |
+        no_const_variable_declaration
         ;
 
 
@@ -157,15 +190,16 @@ statements:
         ;
 
 compound_statement:
-        /*
+        LEFT_CURLY_BRACKET items RIGHT_CURLY_BRACKET
+        ;       
 
-        */
-
+items:
+        declarations statements
         ;
 
 selection_statement:
-        IF LEFT_BRACKET expression RIGHT_BRACKET statements ELSE statements|
-        IF LEFT_BRACKET expression RIGHT_BRACKET statements |
+        IF LEFT_BRACKET expression RIGHT_BRACKET statement ELSE statement |
+        IF LEFT_BRACKET expression RIGHT_BRACKET statement |
         SWITCH LEFT_BRACKET RIGHT_BRACKET LEFT_CURLY_BRACKET switch_statement RIGHT_BRACKET
         ;
 
@@ -188,22 +222,20 @@ cases:
         ;
 
 case_statement:
-        CASE constant_expression COLON statements
+        CASE constant_expression COLON statement
         ;
 
 default_statement:
-        DEFAULT COLON statements
+        DEFAULT COLON statement
         ;
 
 iteration_statement:
-        /*
-                while(expression) {statement; statement; statement;}
-                do {statement; statement; statement;} while(expression)
-                for(expression; expression; expression) {statement; statement; statement;}
-        */
-        WHILE LEFT_BRACKET expression RIGHT_BRACKET statements;
-        DO LEFT_CURLY_BRACKET statements RIGHT_CURLY_BRACKET WHILE LEFT_BRACKET expression RIGHT_BRACKET
-        FOR LEFT_BRACKET expressions RIGHT_BRACKET LEFT_CURLY_BRACKET statements RIGHT_CURLY_BRACKET
+        WHILE LEFT_BRACKET expression RIGHT_BRACKET statement;
+        DO LEFT_CURLY_BRACKET statement RIGHT_CURLY_BRACKET WHILE LEFT_BRACKET expression RIGHT_BRACKET
+        FOR LEFT_BRACKET expressions RIGHT_BRACKET LEFT_CURLY_BRACKET statement RIGHT_CURLY_BRACKET
+        FOR LEFT_BRACKET expression_statement expression_statement expression RIGHT_BRACKET | 
+        FOR LEFT_BRACKET RIGHT_BRACKET |
+        FOR LEFT_BRACKET RIGHT_BRACKET
         ;
 
 skip: 
@@ -224,7 +256,15 @@ expression:
         
         ;
 
+logical_or:
+        logical_or OR logical_and |
+        logical_and
+        ;
 
+logical_and:
+        logical_and AND  |
+
+        ;       
 
 
 
