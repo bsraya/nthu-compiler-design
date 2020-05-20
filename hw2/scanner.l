@@ -1,17 +1,20 @@
 %top{
     #include <string.h>
-    int sourceOn = 1;
-    int tokenOn = 1;
-    int current_line_number = 1;
-    char current_line_content[256];
+
     void print(int token);
     void raise_error();
     void newline();
     void yyerror(const *msg)
+
+    int sourceOn = 1;
+    int tokenOn = 1;
+    int current_line_number = 1;
+    char current_line_content[256];
+    
     
     void yyerror(const *msg) {
-        fprint()
-        exit(EXIT_FAILURE)
+        fprint(stderr, "Error at line %d: %s\n", current_line_number, current_line_content);
+        exit(EXIT_FAILURE);
     }
 
     typedef enum DATATYPE {
@@ -32,10 +35,10 @@
 
     typedef enum OPERATOR {
         PLUS = 30, MINUS, MULTIPLE, DIVIDE, MOD, 
-        TWO_MINUS, TWO_PLUS, LESS, LESS_THAN, GREATER, 
-        GREATER_THAN, SAME, NOT_EQUAL, EQUAL, AND, 
-        OR, NOT, BI_AND, BI_OR, BI_XOR, 
-        BI_COMPLEMENT, LEFT_SHIFT, RIGHT_SHIFT = 52
+        DECREMENT, INCREMENT, LESS, LESS_THAN, GREATER, 
+        GREATER_THAN, EQUAL_TO, NOT_EQUAL_TO, ASSIGN_EQUAL, LOGICAL_AND, 
+        LOGICAL_OR, LOGICAL_NOT, BITWISE_AND, BITWISE_OR, BITWISE_XOR, 
+        BITWISE_COMPLEMENT, LEFT_SHIFT, RIGHT_SHIFT = 52
     } OPERATOR;
 
     typedef enum PUNCTUANTION {
@@ -107,31 +110,31 @@ INVALID_DOUBLE                              ([0-9]+".")
 VALID_SCIENTIFIC_NOTATION                   ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+)
 INVALID_SCIENTIFIC_NOTATION                 ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
 
-LIST_OF_KEYWORDS             		        ("double"|"int"|"char"|"bool"|"void"|"null"|"for"|"while"|"do"|"if"|"else"|"switch"|"return"|"break"|"continue"|"const"|"true"|"false"|"struct"|"case"|"default"|"printf"|"scanf"|"getc"|"gets"|"getchar"|"puts"|"putchar"|"clearerr"|"fopen"|"fclose"|"getw"|"putw"|"fgetc"|"putc"|"fputc"|"fgets"|"fputs"|"feof"|"fseek"|"ftell"|"rewind"|"sprintf"|"sscanf"|"remove"|"fflush")
+LIST_OF_KEYWORD             		        ("goto"|"register"|"sizeof"|"typedef"|"volatile"|"extern"|"static"|"union"|"enum"|"auto"|"double"|"int"|"char"|"bool"|"void"|"null"|"for"|"while"|"do"|"if"|"else"|"switch"|"return"|"break"|"continue"|"const"|"true"|"false"|"struct"|"case"|"default"|"printf"|"scanf"|"getc"|"gets"|"getchar"|"puts"|"putchar"|"clearerr"|"fopen"|"fclose"|"getw"|"putw"|"fgetc"|"putc"|"fputc"|"fgets"|"fputs"|"feof"|"fseek"|"ftell"|"rewind"|"sprintf"|"sscanf"|"remove"|"fflush"|"ferror"|"fgetpos"|"fread"|"freopen"|"fsetpos"|"fwrite"|"rename"|"setbuf"|"setvbuf"|"tmpfile"|"tmpnam"|"fprintf"|"vfprintf"|"vprintf"|"vsprintf"|"fscanf"|"ungetc"|"perror")
 
 %%
 
-{SOURCEOFF}                                 { sourceOn = 0; strcat(cur_line_content,yytext);    }
-{SOURCEON}                                  { sourceOn = 1; strcat(cur_line_content,yytext);    }
-{TOKENOFF}                                  { tokenOn = 0; strcat(cur_line_content,yytext);     }
-{TOKENON}                                   { tokenOn = 1; strcat(cur_line_content,yytext);     }
+{SOURCEOFF}                                 { sourceOn = 0; strcat(cur_line_content, yytext);    }
+{SOURCEON}                                  { sourceOn = 1; strcat(cur_line_content, yytext);    }
+{TOKENOFF}                                  { tokenOn = 0; strcat(cur_line_content, yytext);     }
+{TOKENON}                                   { tokenOn = 1; strcat(cur_line_content, yytext);     }
 
-{COMMENT}                                   { strcat(cur_line_content,yytext);                              }
-"/*"				                        { BEGIN(MULTILINE_COMMENT); strcat(cur_line_content,yytext);    }
-<MULTILINE_COMMENT>[^*\n]*                  { strcat(cur_line_content,yytext);                              }
-<MULTILINE_COMMENT>"*"+[^*/\n]*             { strcat(cur_line_content,yytext);                              }
+{COMMENT}                                   { strcat(cur_line_content, yytext);                              }
+"/*"				                        { BEGIN(MULTILINE_COMMENT); strcat(cur_line_content, yytext);    }
+<MULTILINE_COMMENT>[^*\n]*                  { strcat(cur_line_content, yytext);                              }
+<MULTILINE_COMMENT>"*"+[^*/\n]*             { strcat(cur_line_content, yytext);                              }
 <MULTILINE_COMMENT>\n 		                { newline();                                                    }
 <MULTILINE_COMMENT>"*"+"/"	                { BEGIN(INITIAL); strcat(cur_line_content,yytext);              }
 
-{ZERO}                                      { strcat(cur_line_content,yytext); return TOKEN_INTEGER;    }
-{VALID_INTEGER}	                            { strcat(cur_line_content,yytext); return TOKEN_INTEGER;    }
-{DOUBLE}                                    { strcat(cur_line_content,yytext); return TOKEN_DOUBLE;     }
-{ZERO_DOUBLE}                               { strcat(cur_line_content,yytext); return TOKEN_DOUBLE;     }
-{NO_ZERO_DOUBLE}                            { strcat(cur_line_content,yytext); return TOKEN_DOUBLE;     }
-{VALID_SCIENTIFIC_NOTATION}                 { strcat(cur_line_content,yytext); return TOKEN_SCI_NOT;    }
-{CHARACTER}                                 { strcat(cur_line_content,yytext); return TOKEN_CHARACTER;  }
-{CHARACTER_SPACES}                          { strcat(cur_line_content,yytext); return TOKEN_CHARACTER;  }
-{STRING}                                    { strcat(cur_line_content,yytext); return TOKEN_STRING;     }
+{ZERO}                                      { strcat(cur_line_content, yytext); return TOKEN_INTEGER;        }
+{VALID_INTEGER}	                            { strcat(cur_line_content, yytext); return TOKEN_INTEGER;        }
+{DOUBLE}                                    { strcat(cur_line_content, yytext); return TOKEN_DOUBLE;         }
+{ZERO_DOUBLE}                               { strcat(cur_line_content, yytext); return TOKEN_DOUBLE;         }
+{NO_ZERO_DOUBLE}                            { strcat(cur_line_content, yytext); return TOKEN_DOUBLE;         }
+{VALID_SCIENTIFIC_NOTATION}                 { strcat(cur_line_content, yytext); return TOKEN_SCI_NOT;        }
+{CHARACTER}                                 { strcat(cur_line_content, yytext); return TOKEN_CHARACTER;      }
+{CHARACTER_SPACES}                          { strcat(cur_line_content, yytext); return TOKEN_CHARACTER;      }
+{STRING}                                    { strcat(cur_line_content, yytext); return TOKEN_STRING;         }
 
 {BACKSLASHES}                               { raise_error(); return 0; }
 {INVALID_INTEGER}                           { raise_error(); return 0; }
@@ -141,136 +144,136 @@ LIST_OF_KEYWORDS             		        ("double"|"int"|"char"|"bool"|"void"|"nul
 {UNINFLECTED_TERM_CHAR}                     { raise_error(); return 0; }
 {UNINFLECTED_TERM_STRING}                   { raise_error(); return 0; }
 
-[\n]                                        { newline();                        }
-[ \t\r]+                                    { strcat(cur_line_content,yytext);  }
+[\n]                                        { newline();                                                     }
+[ \t\r]+                                    { strcat(cur_line_content, yytext);                              }
 
-"true"                                      { strcat(cur_line_content,yytext); return RESVRD_TRUE;  }
-"false"                                     { strcat(cur_line_content,yytext); return RESVRD_FALSE; }
-"null"                                      { strcat(cur_line_content,yytext); return RESVRD_NULL;  }
+"true"                                      { strcat(cur_line_content, yytext); return RESVRD_TRUE;          }
+"false"                                     { strcat(cur_line_content, yytext); return RESVRD_FALSE;         }
+"null"                                      { strcat(cur_line_content, yytext); return RESVRD_NULL;          }
 
-"bool"                                      { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content,yytext); return DATATYPE_BOOL;        }
-"int"                                       { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content,yytext); return DATATYPE_INT;         }
-"double"                                    { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content,yytext); return DATATYPE_DOUBLE;      }
-"char"                                      { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content,yytext); return DATATYPE_CHAR;        }
-"float"                                     { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content,yytext); return DATATYPE_FLOAT;       }
-<VARIABLE_ASSIGNMENT>"="			        { BEGIN(INITIAL);             strcat(cur_line_content,yytext); return EQUAL;                }
-<VARIABLE_ASSIGNMENT>";"			        { BEGIN(INITIAL);             strcat(cur_line_content,yytext); return SEMICOLON;            }
-<VARIABLE_ASSIGNMENT>{IDENTIFIER}           { BEGIN(INITIAL);             strcat(cur_line_content,yytext); return TOKEN_IDENTIFIER;     }
-<VARIABLE_ASSIGNMENT>"*"			        { strcat(cur_line_content,yytext); return MULTIPLE;                                         }
-<VARIABLE_ASSIGNMENT>[ \t\r]+   	        { strcat(cur_line_content,yytext);                                                          }
-<VARIABLE_ASSIGNMENT>{LIST_OF_KEYWORDS}	    { raise_error(); return 0;                                                                  }
-<VARIABLE_ASSIGNMENT>.			            { raise_error(); return 0;                                                                  }
+"bool"                                      { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content, yytext); return DATATYPE_BOOL;        }
+"int"                                       { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content, yytext); return DATATYPE_INT;         }
+"double"                                    { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content, yytext); return DATATYPE_DOUBLE;      }
+"char"                                      { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content, yytext); return DATATYPE_CHAR;        }
+"float"                                     { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content, yytext); return DATATYPE_FLOAT;       }
+<VARIABLE_ASSIGNMENT>"="			        { BEGIN(INITIAL);             strcat(cur_line_content, yytext); return ASSIGN_EQUAL;         }
+<VARIABLE_ASSIGNMENT>";"			        { BEGIN(INITIAL);             strcat(cur_line_content, yytext); return SEMICOLON;            }
+<VARIABLE_ASSIGNMENT>{IDENTIFIER}           { BEGIN(INITIAL);             strcat(cur_line_content, yytext); return TOKEN_IDENTIFIER;     }
+<VARIABLE_ASSIGNMENT>"*"			        { strcat(cur_line_content, yytext); return MULTIPLE;                                         }
+<VARIABLE_ASSIGNMENT>[ \t\r]+   	        { strcat(cur_line_content, yytext);                                                          }
+<VARIABLE_ASSIGNMENT>{LIST_OF_KEYWORD}	    { raise_error(); return 0;                                                                   }
+<VARIABLE_ASSIGNMENT>.			            { raise_error(); return 0;                                                                   }
 
-"void"                                      { strcat(cur_line_content,yytext); return VOID;             }
-"for"                                       { strcat(cur_line_content,yytext); return FOR;              }
-"do"                                        { strcat(cur_line_content,yytext); return DO;               }
-"while"                                     { strcat(cur_line_content,yytext); return WHILE;            }
-"break"                                     { strcat(cur_line_content,yytext); return BREAK;            }
-"continue"                                  { strcat(cur_line_content,yytext); return CONTINUE;         }
-"if"                                        { strcat(cur_line_content,yytext); return IF;               }
-"else"                                      { strcat(cur_line_content,yytext); return ELSE;             }
-"auto"                                      { strcat(cur_line_content,yytext); return AUTO;             }           
-"const"                                     { strcat(cur_line_content,yytext); return CONST;            }
-"static"                                    { strcat(cur_line_content,yytext); return STATIC;           }
-"union"                                     { strcat(cur_line_content,yytext); return UNION;            }
-"enum"                                      { strcat(cur_line_content,yytext); return ENUM;             }
-"goto"                                      { strcat(cur_line_content,yytext); return GOTO;             }
-"register"                                  { strcat(cur_line_content,yytext); return REGISTER;         }
-"sizeof"                                    { strcat(cur_line_content,yytext); return SIZEOF;           }
-"typedef"                                   { strcat(cur_line_content,yytext); return TYPEDEF;          }
-"volatile"                                  { strcat(cur_line_content,yytext); return VOLATILE;         }
-"extern"                                    { strcat(cur_line_content,yytext); return EXTERN;           }
-"return"                                    { strcat(cur_line_content,yytext); return RETURN;           }
-"struct"                                    { strcat(cur_line_content,yytext); return STRUCT;           }
-"switch"                                    { strcat(cur_line_content,yytext); return SWITCH;           }
-"case"                                      { strcat(cur_line_content,yytext); return CASE;             }
-"default"                                   { strcat(cur_line_content,yytext); return DEFAULT;          }
+"void"                                      { strcat(cur_line_content, yytext); return VOID;                 }
+"for"                                       { strcat(cur_line_content, yytext); return FOR;                  }
+"do"                                        { strcat(cur_line_content, yytext); return DO;                   }
+"while"                                     { strcat(cur_line_content, yytext); return WHILE;                }
+"break"                                     { strcat(cur_line_content, yytext); return BREAK;                }
+"continue"                                  { strcat(cur_line_content, yytext); return CONTINUE;             }
+"if"                                        { strcat(cur_line_content, yytext); return IF;                   }
+"else"                                      { strcat(cur_line_content, yytext); return ELSE;                 }
+"auto"                                      { strcat(cur_line_content, yytext); return AUTO;                 }            
+"const"                                     { strcat(cur_line_content, yytext); return CONST;                }
+"static"                                    { strcat(cur_line_content, yytext); return STATIC;               }
+"union"                                     { strcat(cur_line_content, yytext); return UNION;                }
+"enum"                                      { strcat(cur_line_content, yytext); return ENUM;                 }
+"goto"                                      { strcat(cur_line_content, yytext); return GOTO;                 }
+"register"                                  { strcat(cur_line_content, yytext); return REGISTER;             }
+"sizeof"                                    { strcat(cur_line_content, yytext); return SIZEOF;               }
+"typedef"                                   { strcat(cur_line_content, yytext); return TYPEDEF;              }
+"volatile"                                  { strcat(cur_line_content, yytext); return VOLATILE;             }
+"extern"                                    { strcat(cur_line_content, yytext); return EXTERN;               }
+"return"                                    { strcat(cur_line_content, yytext); return RETURN;               }
+"struct"                                    { strcat(cur_line_content, yytext); return STRUCT;               }
+"switch"                                    { strcat(cur_line_content, yytext); return SWITCH;               }
+"case"                                      { strcat(cur_line_content, yytext); return CASE;                 }
+"default"                                   { strcat(cur_line_content, yytext); return DEFAULT;              }
 
-"+"                                         { strcat(cur_line_content,yytext); return PLUS;             }
-"-"                                         { strcat(cur_line_content,yytext); return MINUS;            }
-"*"                                         { strcat(cur_line_content,yytext); return MULTIPLE;         }
-"/"                                         { strcat(cur_line_content,yytext); return DIVIDE;           }
-"%"                                         { strcat(cur_line_content,yytext); return MOD;              }
-"++"                                        { strcat(cur_line_content,yytext); return TWO_PLUS;         }
-"--"                                        { strcat(cur_line_content,yytext); return TWO_MINUS;        } 
-"<"                                         { strcat(cur_line_content,yytext); return LESS;             }
-"<="                                        { strcat(cur_line_content,yytext); return LESS_THAN;        }
-">"                                         { strcat(cur_line_content,yytext); return GREATER;          }
-">="                                        { strcat(cur_line_content,yytext); return GREATER_THAN;     }
-"=="                                        { strcat(cur_line_content,yytext); return SAME;             }
-"!="                                        { strcat(cur_line_content,yytext); return NOT_EQUAL;        }
-"="                                         { strcat(cur_line_content,yytext); return EQUAL;            }
-"&&"                                        { strcat(cur_line_content,yytext); return AND;              }
-"||"                                        { strcat(cur_line_content,yytext); return OR;               }
-"!"                                         { strcat(cur_line_content,yytext); return NOT;              }
-"&"                                         { strcat(cur_line_content,yytext); return BI_AND;           }
-"|"                                         { strcat(cur_line_content,yytext); return BI_OR;            }
-"^"                                         { strcat(cur_line_content,yytext); return BI_XOR;           }
-"~"                                         { strcat(cur_line_content,yytext); return BI_COMPLEMENT;    }
-"<<"                                        { strcat(cur_line_content,yytext); return LEFT_SHIFT;       }
-">>"                                        { strcat(cur_line_content,yytext); return RIGHT_SHIFT;      }
+"+"                                         { strcat(cur_line_content, yytext); return PLUS;                 }
+"-"                                         { strcat(cur_line_content, yytext); return MINUS;                }
+"*"                                         { strcat(cur_line_content, yytext); return MULTIPLE;             }
+"/"                                         { strcat(cur_line_content, yytext); return DIVIDE;               }
+"%"                                         { strcat(cur_line_content, yytext); return MOD;                  }
+"++"                                        { strcat(cur_line_content, yytext); return INCREMENT;            }
+"--"                                        { strcat(cur_line_content, yytext); return DECREMENT;            }    
+"<"                                         { strcat(cur_line_content, yytext); return LESS;                 }
+"<="                                        { strcat(cur_line_content, yytext); return LESS_THAN;            }
+">"                                         { strcat(cur_line_content, yytext); return GREATER;              }
+">="                                        { strcat(cur_line_content, yytext); return GREATER_THAN;         }
+"=="                                        { strcat(cur_line_content, yytext); return EQUAL_TO;             }
+"!="                                        { strcat(cur_line_content, yytext); return NOT_EQUAL_TO;         }
+"="                                         { strcat(cur_line_content, yytext); return ASSIGN_EQUAL;         }
+"&&"                                        { strcat(cur_line_content, yytext); return LOGICAL_AND;          }
+"||"                                        { strcat(cur_line_content, yytext); return LOGICAL_OR;           }
+"!"                                         { strcat(cur_line_content, yytext); return LOGICAL_NOT;          }
+"&"                                         { strcat(cur_line_content, yytext); return BITWISE_AND;          }
+"|"                                         { strcat(cur_line_content, yytext); return BITWISE_OR;           }
+"^"                                         { strcat(cur_line_content, yytext); return BITWISE_XOR;          }
+"~"                                         { strcat(cur_line_content, yytext); return BITWISE_COMPLEMENT;   }
+"<<"                                        { strcat(cur_line_content, yytext); return LEFT_SHIFT;           }
+">>"                                        { strcat(cur_line_content, yytext); return RIGHT_SHIFT;          }
 
-"`"                                         { strcat(cur_line_content,yytext); return GRAVE_ACCENT;         }
-"#"                                         { strcat(cur_line_content,yytext); return POUND;                }
-"$"                                         { strcat(cur_line_content,yytext); return DOLLAR;               }
-":"			                                { strcat(cur_line_content,yytext); return COLON;                }
-";"				                            { strcat(cur_line_content,yytext); return SEMICOLON;            }
-","				                            { strcat(cur_line_content,yytext); return COMMA;                }
-"."				                            { strcat(cur_line_content,yytext); return DOT;                  }
-"["				                            { strcat(cur_line_content,yytext); return LEFT_SQUARE_BRACKET;  }
-"]"				                            { strcat(cur_line_content,yytext); return RIGHT_SQUARE_BRACKET; }
-"("				                            { strcat(cur_line_content,yytext); return LEFT_BRACKET;         }
-")"				                            { strcat(cur_line_content,yytext); return RIGHT_BRACKET;        }
-"{"				                            { strcat(cur_line_content,yytext); return LEFT_CURLY_BRACKET;   }
-"}"				                            { strcat(cur_line_content,yytext); return RIGHT_CURLY_BRACKET;  }
-"@"                                         { strcat(cur_line_content,yytext); return AT_SIGN;              }
+"`"                                         { strcat(cur_line_content, yytext); return GRAVE_ACCENT;         }
+"#"                                         { strcat(cur_line_content, yytext); return POUND;                }
+"$"                                         { strcat(cur_line_content, yytext); return DOLLAR;               }
+":"			                                { strcat(cur_line_content, yytext); return COLON;                }
+";"				                            { strcat(cur_line_content, yytext); return SEMICOLON;            }
+","				                            { strcat(cur_line_content, yytext); return COMMA;                }
+"."				                            { strcat(cur_line_content, yytext); return DOT;                  }
+"["				                            { strcat(cur_line_content, yytext); return LEFT_SQUARE_BRACKET;  }
+"]"				                            { strcat(cur_line_content, yytext); return RIGHT_SQUARE_BRACKET; }
+"("				                            { strcat(cur_line_content, yytext); return LEFT_BRACKET;         }
+")"				                            { strcat(cur_line_content, yytext); return RIGHT_BRACKET;        }
+"{"				                            { strcat(cur_line_content, yytext); return LEFT_CURLY_BRACKET;   }
+"}"				                            { strcat(cur_line_content, yytext); return RIGHT_CURLY_BRACKET;  }
+"@"                                         { strcat(cur_line_content, yytext); return AT_SIGN;              }
 
-"fclose"		                            { strcat(cur_line_content,yytext); return FCLOSE;       }
-"clearerr"		                            { strcat(cur_line_content,yytext); return CLEARERR;     }
-"feof"			                            { strcat(cur_line_content,yytext); return FEOF;         } 
-"ferror"                                    { strcat(cur_line_content,yytext); return FERROR;       } 
-"fflush"		                            { strcat(cur_line_content,yytext); return FFLUSH;       }
-"fgetpos"                                   { strcat(cur_line_content,yytext); return FGETPOS;      }
-"fopen"                                     { strcat(cur_line_content,yytext); return FOPEN;        }
-"fread"                                     { strcat(cur_line_content,yytext); return FREAD;        }
-"freopen"                                   { strcat(cur_line_content,yytext); return FREOPEN;      }
-"fseek"			                            { strcat(cur_line_content,yytext); return FSEEK;        }
-"fsetpos"                                   { strcat(cur_line_content,yytext); return FSETPOS;      }
-"ftell"			                            { strcat(cur_line_content,yytext); return FTELL;        }
-"fwrite"                                    { strcat(cur_line_content,yytext); return FWRITE;       }
-"remove"		                            { strcat(cur_line_content,yytext); return REMOVE;       }
-"rename"                                    { strcat(cur_line_content,yytext); return RENAME;       }
-"rewind"		                            { strcat(cur_line_content,yytext); return REWIND;       }
-"setbuf"                                    { strcat(cur_line_content,yytext); return SETBUF;       }
-"setvbuf"                                   { strcat(cur_line_content,yytext); return SETVBUF;      }
-"tmpfile"                                   { strcat(cur_line_content,yytext); return TMPFILE;      }
-"tmpnam"                                    { strcat(cur_line_content,yytext); return TMPNAM;       }
-"fprintf"                                   { strcat(cur_line_content,yytext); return FPRINTF;      }
-"printf" 		                            { strcat(cur_line_content,yytext); return PRINTF;       }  
-"sprintf" 		                            { strcat(cur_line_content,yytext); return SPRINTF;      }
-"vfprintf"                                  { strcat(cur_line_content,yytext); return VFPRINTF;     }
-"vprintf"                                   { strcat(cur_line_content,yytext); return VPRINTF;      }
-"vsprintf"                                  { strcat(cur_line_content,yytext); return VSPRINTF;     }
-"fscanf"                                    { strcat(cur_line_content,yytext); return FSCANF;       }
-"scanf"			                            { strcat(cur_line_content,yytext); return SCANF;        }
-"sscanf"		                            { strcat(cur_line_content,yytext); return SSCANF;       }
-"fgetc"			                            { strcat(cur_line_content,yytext); return FGETC;        }  
-"fgets"			                            { strcat(cur_line_content,yytext); return FGETS;        }
-"fputc"			                            { strcat(cur_line_content,yytext); return FPUTC;        }
-"fputs"			                            { strcat(cur_line_content,yytext); return FPUTS;        }
-"getc"			                            { strcat(cur_line_content,yytext); return GETC;         }
-"getchar"		                            { strcat(cur_line_content,yytext); return GETCHAR;      }
-"gets"			                            { strcat(cur_line_content,yytext); return GETS;         }
-"putc"			                            { strcat(cur_line_content,yytext); return PUTC;         }
-"putchar"		                            { strcat(cur_line_content,yytext); return PUTCHAR;      }
-"puts"			                            { strcat(cur_line_content,yytext); return PUTS;         }
-"ungetc"                                    { strcat(cur_line_content,yytext); return UNGETC;       }
-"perror"                                    { strcat(cur_line_content,yytext); return PERROR;       }
-"getw"			                            { strcat(cur_line_content,yytext); return GETW;         }
-"putw"			                            { strcat(cur_line_content,yytext); return PUTW;         }
+"fclose"		                            { strcat(cur_line_content, yytext); return FCLOSE;               }
+"clearerr"		                            { strcat(cur_line_content, yytext); return CLEARERR;             }
+"feof"			                            { strcat(cur_line_content, yytext); return FEOF;                 }           
+"ferror"                                    { strcat(cur_line_content, yytext); return FERROR;               } 
+"fflush"		                            { strcat(cur_line_content, yytext); return FFLUSH;               }
+"fgetpos"                                   { strcat(cur_line_content, yytext); return FGETPOS;              }
+"fopen"                                     { strcat(cur_line_content, yytext); return FOPEN;                }
+"fread"                                     { strcat(cur_line_content, yytext); return FREAD;                }
+"freopen"                                   { strcat(cur_line_content, yytext); return FREOPEN;              }
+"fseek"			                            { strcat(cur_line_content, yytext); return FSEEK;                }
+"fsetpos"                                   { strcat(cur_line_content, yytext); return FSETPOS;              }
+"ftell"			                            { strcat(cur_line_content, yytext); return FTELL;                }
+"fwrite"                                    { strcat(cur_line_content, yytext); return FWRITE;               }
+"remove"		                            { strcat(cur_line_content, yytext); return REMOVE;               }
+"rename"                                    { strcat(cur_line_content, yytext); return RENAME;               }
+"rewind"		                            { strcat(cur_line_content, yytext); return REWIND;               }
+"setbuf"                                    { strcat(cur_line_content, yytext); return SETBUF;               }
+"setvbuf"                                   { strcat(cur_line_content, yytext); return SETVBUF;              }
+"tmpfile"                                   { strcat(cur_line_content, yytext); return TMPFILE;              }
+"tmpnam"                                    { strcat(cur_line_content, yytext); return TMPNAM;               }
+"fprintf"                                   { strcat(cur_line_content, yytext); return FPRINTF;              }
+"printf" 		                            { strcat(cur_line_content, yytext); return PRINTF;               }  
+"sprintf" 		                            { strcat(cur_line_content, yytext); return SPRINTF;              }
+"vfprintf"                                  { strcat(cur_line_content, yytext); return VFPRINTF;             }
+"vprintf"                                   { strcat(cur_line_content, yytext); return VPRINTF;              }
+"vsprintf"                                  { strcat(cur_line_content, yytext); return VSPRINTF;             }
+"fscanf"                                    { strcat(cur_line_content, yytext); return FSCANF;               }
+"scanf"			                            { strcat(cur_line_content, yytext); return SCANF;                }
+"sscanf"		                            { strcat(cur_line_content, yytext); return SSCANF;               }
+"fgetc"			                            { strcat(cur_line_content, yytext); return FGETC;                }        
+"fgets"			                            { strcat(cur_line_content, yytext); return FGETS;                }
+"fputc"			                            { strcat(cur_line_content, yytext); return FPUTC;                }
+"fputs"			                            { strcat(cur_line_content, yytext); return FPUTS;                }
+"getc"			                            { strcat(cur_line_content, yytext); return GETC;                 }
+"getchar"		                            { strcat(cur_line_content, yytext); return GETCHAR;              }
+"gets"			                            { strcat(cur_line_content, yytext); return GETS;                 }
+"putc"			                            { strcat(cur_line_content, yytext); return PUTC;                 }
+"putchar"		                            { strcat(cur_line_content, yytext); return PUTCHAR;              }
+"puts"			                            { strcat(cur_line_content, yytext); return PUTS;                 }
+"ungetc"                                    { strcat(cur_line_content, yytext); return UNGETC;               }
+"perror"                                    { strcat(cur_line_content, yytext); return PERROR;               }
+"getw"			                            { strcat(cur_line_content, yytext); return GETW;                 }
+"putw"			                            { strcat(cur_line_content, yytext); return PUTW;                 }
 
-{IDENTIFIER}                                { strcat(cur_line_content,yytext); return TOKEN_IDENTIFIER; }
-.                                           { raise_error(); return 0; }
+{IDENTIFIER}                                { strcat(cur_line_content, yytext); return TOKEN_IDENTIFIER;     }
+.                                           { raise_error(); return 0;                                       }
 
 %%
 
