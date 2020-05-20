@@ -13,36 +13,34 @@
         DATATYPE_DOUBLE, 
         DATATYPE_FLOAT,
         DATATYPE_CHAR,
-        DATATYPE_LONG,
-        DATATYPE_BOOL,
-        DATATYPE_SHORT = 7
+        DATATYPE_BOOL = 5,
     } DATATYPE;
 
     typedef enum KEYWORD {
-        VOID = 8, FOR, DO, WHILE, BREAK, 
+        VOID = 6, FOR, DO, WHILE, BREAK, 
         CONTINUE, IF, ELSE, AUTO, CONST, 
         STATIC, UNION, ENUM, GOTO, REGISTER, 
         SIZEOF, TYPEDEF, VOLATILE, EXTERN, RETURN, 
-        STRUCT, SWITCH, CASE, DEFAULT = 31
+        STRUCT, SWITCH, CASE, DEFAULT = 29
     } KEYWORD;
 
     typedef enum OPERATOR {
-        PLUS = 32, MINUS, MULTIPLE, DIVIDE, MOD, 
+        PLUS = 30, MINUS, MULTIPLE, DIVIDE, MOD, 
         TWO_MINUS, TWO_PLUS, LESS, LESS_THAN, GREATER, 
         GREATER_THAN, SAME, NOT_EQUAL, EQUAL, AND, 
         OR, NOT, BI_AND, BI_OR, BI_XOR, 
-        BI_COMPLEMENT, LEFT_SHIFT, RIGHT_SHIFT = 54
+        BI_COMPLEMENT, LEFT_SHIFT, RIGHT_SHIFT = 52
     } OPERATOR;
 
     typedef enum PUNCTUANTION {
-        GRAVE_ACCENT = 55, POUND, DOLLAR, 
+        GRAVE_ACCENT = 53, POUND, DOLLAR, 
         COLON, SEMICOLON, COMMA, DOT,
         LEFT_SQUARE_BRACKET, RIGHT_SQUARE_BRACKET, LEFT_BRACKET, RIGHT_BRACKET,
-        LEFT_CURLY_BRACKET, RIGHT_CURLY_BRACKET, AT_SIGN = 68
+        LEFT_CURLY_BRACKET, RIGHT_CURLY_BRACKET, AT_SIGN = 66
     } PUNCTUANTION;
 
     typedef enum LIBRARY_FUNCTION {
-        FCLOSE = 69, CLEARERR, FEOF, FERROR, FFLUSH,
+        FCLOSE = 67, CLEARERR, FEOF, FERROR, FFLUSH,
         FGETPOS, FOPEN, FREAD, FREOPEN, FSEEK,
         FSETPOS, FTELL, FWRITE, REMOVE, RENAME,
         REWIND, SETBUF, SETVBUF, TMPFILE,
@@ -50,11 +48,11 @@
         VPRINTF, VSPRINTF, FSCANF, SCANF, SSCANF,
         FGETC, FGETS, FPUTC, FPUTS, GETC,
         GETCHAR, GETS, PUTC, PUTCHAR, PUTS, 
-        UNGETC, PERROR, GETW, PUTW = 111
+        UNGETC, PERROR, GETW, PUTW = 109
     } LIBRARY_FUNCTION;
 
     typedef enum RESERVED_WORD {
-        RESVRD_TRUE = 112, RESVRD_FALSE = 113, RESVRD_NULL = 114
+        RESVRD_TRUE = 110, RESVRD_FALSE = 111, RESVRD_NULL = 112
     } RESERVED_WORD;
 
     typedef enum TOKEN_TYPE {
@@ -107,27 +105,27 @@ LIST_OF_KEYWORDS             		("double"|"int"|"char"|"bool"|"void"|"null"|"for"
 
 %%
 
-{SOURCEOFF}                         { sourceOn = 0; return CONFIG_SOURCEOFF; }
-{TOKENOFF}                          { tokenOn = 0; return CONFIG_TOKENOFF; }
-{SOURCEON}                          { sourceOn = 1; return CONFIG_SOURCEON; }
-{TOKENON}                           { tokenOn = 1; return CONFIG_TOKENON; }
+{SOURCEOFF}                         { sourceOn = 0; strcat(cur_line_content,yytext);  }
+{TOKENOFF}                          { tokenOn = 0; strcat(cur_line_content,yytext);  }
+{SOURCEON}                          { sourceOn = 1; strcat(cur_line_content,yytext);  }
+{TOKENON}                           { tokenOn = 1; strcat(cur_line_content,yytext);  }
 
-{COMMENT}                           return OTR_COMMENT;
-"/*"				                { BEGIN(MULTILINE_COMMENT); return OTR_MULTILINE_COMMENT; }
-<MULTILINE_COMMENT>[^*\n]*          return OTR_MULTILINE_COMMENT;
-<MULTILINE_COMMENT>"*"+[^*/\n]*     return OTR_MULTILINE_COMMENT;
+{COMMENT}                           { strcat(cur_line_content,yytext); }
+"/*"				                { BEGIN(MULTILINE_COMMENT); strcat(cur_line_content,yytext); }
+<MULTILINE_COMMENT>[^*\n]*          { strcat(cur_line_content,yytext); }
+<MULTILINE_COMMENT>"*"+[^*/\n]*     { strcat(cur_line_content,yytext); }
 <MULTILINE_COMMENT>\n 		        newline(); 
-<MULTILINE_COMMENT>"*"+"/"	        { BEGIN(INITIAL); return OTR_MULTILINE_COMMENT;}
+<MULTILINE_COMMENT>"*"+"/"	        { BEGIN(INITIAL); strcat(cur_line_content,yytext); }
 
-{ZERO}                              return TOKEN_INTEGER;
-{VALID_INTEGER}	                    return TOKEN_INTEGER;
-{DOUBLE}                            return TOKEN_DOUBLE;
-{ZERO_DOUBLE}                       return TOKEN_DOUBLE;
-{NO_ZERO_DOUBLE}                    return TOKEN_DOUBLE;
-{VALID_SCIENTIFIC_NOTATION}         return TOKEN_SCI_NOT;
-{CHARACTER}                         return TOKEN_CHARACTER;
-{CHARACTER_SPACES}                  return TOKEN_CHARACTER;
-{STRING}                            return TOKEN_STRING;
+{ZERO}                              { strcat(cur_line_content,yytext); return TOKEN_INTEGER; }
+{VALID_INTEGER}	                    { strcat(cur_line_content,yytext); return TOKEN_INTEGER; }
+{DOUBLE}                            { strcat(cur_line_content,yytext); return TOKEN_DOUBLE; }
+{ZERO_DOUBLE}                       { strcat(cur_line_content,yytext); return TOKEN_DOUBLE; }
+{NO_ZERO_DOUBLE}                    { strcat(cur_line_content,yytext); return TOKEN_DOUBLE; }
+{VALID_SCIENTIFIC_NOTATION}         { strcat(cur_line_content,yytext); return TOKEN_SCI_NOT; }
+{CHARACTER}                         { strcat(cur_line_content,yytext); return TOKEN_CHARACTER; }
+{CHARACTER_SPACES}                  { strcat(cur_line_content,yytext); return TOKEN_CHARACTER; }
+{STRING}                            { strcat(cur_line_content,yytext); return TOKEN_STRING; }
 
 {BACKSLASHES}                       { raise_error(); return 0; }
 {INVALID_INTEGER}                   { raise_error(); return 0; }
@@ -144,19 +142,18 @@ LIST_OF_KEYWORDS             		("double"|"int"|"char"|"bool"|"void"|"null"|"for"
 "false"                             return RESVRD_FALSE;
 "null"                              return RESVRD_NULL;
 
-"bool"                              { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_BOOL; }
-"long"                              { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_LONG; }
-"short"                             { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_SHORT; }
-"int"                               { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_INT; }
-"double"                            { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_DOUBLE; }
-"char"                              { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_CHAR; }
-<VARIABLE_ASSIGNMENT>"="			{ BEGIN(INITIAL); return EQUAL; }
-<VARIABLE_ASSIGNMENT>";"			{ BEGIN(INITIAL); return SEMICOLON; }
-<VARIABLE_ASSIGNMENT>[ \t\r]+   	return OTR_SPACE;
-<VARIABLE_ASSIGNMENT>"*"			return MULTIPLE;
+"bool"                                      { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_BOOL; }
+"int"                                       { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_INT; }
+"double"                                    { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_DOUBLE; }
+"char"                                      { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_CHAR; }
+"float"                                     { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_FLOAT; }
+<VARIABLE_ASSIGNMENT>"="			        { BEGIN(INITIAL); return EQUAL; }
+<VARIABLE_ASSIGNMENT>";"			        { BEGIN(INITIAL); return SEMICOLON; }
+<VARIABLE_ASSIGNMENT>[ \t\r]+   	        return OTR_SPACE;
+<VARIABLE_ASSIGNMENT>"*"			        return MULTIPLE;
 <VARIABLE_ASSIGNMENT>{LIST_OF_KEYWORDS}	    { raise_error(); return 0; }
-<VARIABLE_ASSIGNMENT>{IDENTIFIER}   { BEGIN(INITIAL); return TOKEN_IDENTIFIER; }
-<VARIABLE_ASSIGNMENT>.			    { raise_error(); return 0; }
+<VARIABLE_ASSIGNMENT>{IDENTIFIER}           { BEGIN(INITIAL); return TOKEN_IDENTIFIER; }
+<VARIABLE_ASSIGNMENT>.			            { raise_error(); return 0; }
 
 "void"                              return VOID;
 "for"                               return FOR;
@@ -285,12 +282,12 @@ int main () {
 
 
 void print(int token) {
-    if(token >= 1 && token <= 7) fprintf(stdout, "#token key:%s\n", yytext); //datatypes
-    if(token >= 8 && token <= 31) fprintf(stdout, "#token key:%s\n", yytext); //keywords
-    if(token >= 32 && token <= 54) fprintf(stdout, "#token op:%s\n", yytext); //operators
-    if(token >= 55 && token <= 68) {fprintf(stdout, "#token punc:%s\n", yytext); return;} //punctuations
-    if(token >= 69 && token <= 111) fprintf(stdout, "#token key:%s\n", yytext); //stdio functions
-    if(token >= 112 && token <= 114) fprintf(stdout, "#token key:%s\n", yytext);
+    if(token >= 1 && token <= 5) fprintf(stdout, "#token key:%s\n", yytext); //datatypes
+    if(token >= 6 && token <= 29) fprintf(stdout, "#token key:%s\n", yytext); //keywords
+    if(token >= 30 && token <= 52) fprintf(stdout, "#token op:%s\n", yytext); //operators
+    if(token >= 53 && token <= 66) {fprintf(stdout, "#token punc:%s\n", yytext); return;} //punctuations
+    if(token >= 67 && token <= 109) fprintf(stdout, "#token key:%s\n", yytext); //stdio functions
+    if(token >= 110 && token <= 112) fprintf(stdout, "#token key:%s\n", yytext);
     if(token == TOKEN_IDENTIFIER) fprintf(stdout, "#token id:%s\n", yytext);
     if(token == TOKEN_INTEGER) fprintf(stdout, "#token integer:%s\n",yytext);
     if(token == TOKEN_CHARACTER) fprintf(stdout, "#token char:%s\n", yytext);
