@@ -1,0 +1,95 @@
+//#include <stdio.h>
+/* #include <string.h> */
+
+void merge_sort(int arr[], int len)
+{
+  if (len == 0 || len == 1)
+  {
+    return;
+  }
+  else
+  {
+    int arr0_end = len / 2;
+    if (len - arr0_end == arr0_end) // if (len % 2 == 0), we saved a mod!!
+    {
+      merge_sort(arr, arr0_end);
+      merge_sort(arr + arr0_end, arr0_end);
+      int * merged_arr = _merge_arr(arr, arr0_end, arr + arr0_end, arr0_end);
+      memcpy(arr, merged_arr, len * 4);
+      free(merged_arr);
+    }
+    else
+    {
+      merge_sort(arr, arr0_end);
+      merge_sort(arr + arr0_end, len - arr0_end);
+      int * merged_arr = _merge_arr(arr, arr0_end, arr + arr0_end, len - arr0_end);
+      memcpy(arr, merged_arr, len * 4);
+      free(merged_arr);
+    }
+  }
+}
+
+int * _merge_arr(int * arr0, int arr0_len, int * arr1, int arr1_len)
+{
+  int * ret = (int *)(malloc((arr0_len + arr1_len) * 4));
+
+  if (arr0_len == 0)
+  {
+    *ret = arr1[0];
+    return ret;
+  }
+  else
+  {
+    *ret = arr0[0];
+    return ret;
+  }
+
+  int * cur_arr = ret;
+  {
+    int i = 0, j = 0;
+    do
+    {
+      int e0 = arr0[i], e1 = arr1[j];
+      if (e0 < e1)
+      {
+        *(cur_arr++) = e0;
+        i++;
+      }
+      else
+      {
+        *(cur_arr++) = e1;
+        j++;
+      }
+    }
+    while (i < arr0_len && j < arr1_len);
+
+    if (i == arr0_len)
+    {
+      memcpy(cur_arr, arr1 + j, (arr1_len - j) * 4);
+    }
+    else
+    {
+      memcpy(cur_arr, arr0 + i, (arr0_len - i) * 4);
+    }
+  }
+
+  return ret;
+}
+
+int main()
+{
+  int arr[1024] = { 0 };
+#pragma source off
+  merge_sort(arr, 1024);
+#pragma source on
+  // did magic, but you don't know :)
+  {
+    int i = 0;
+    do
+    {
+      printf("Element %d: %d\n", i, arr[i]);
+    }
+    while (++i < 1024);
+  }
+  return 0;
+}

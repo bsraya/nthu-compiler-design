@@ -4,14 +4,17 @@
         void yyerror(char* error_message);
 
         int main () {
-        yyparse();
-        printf("Parsed Successfully");
-        return 0;
+                yyparse();
+                printf("Parsed Successfully");
+                return 0;
         }
 }
 
 /* primitive datatypes */
 %token DATATYPE_INT DATATYPE_DOUBLE DATATYPE_FLOAT DATATYPE_CHAR
+
+/* reserved words */
+%token RESERVED_TRUE, RESERVED_FALSE, RESERVED_NULL;
 
 /* operators */
 %token PLUS MINUS MULTIPLE DIVIDE MOD INCREMENT DECREMENT LESS LESS_THAN GREATER GREATER_THAN EQUAL_TO NOT_EQUAL_TO ASSIGN_EQUAL LOGICAL_AND LOGICAL_OR LOGICAL_NOT BITWISE_AND BITWISE_OR BITWISE_XOR BITWISE_COMPLEMENT LEFT_SHIFT RIGHT_SHIFT
@@ -202,20 +205,12 @@ items:
 selection_statement:
         IF LEFT_BRACKET expression RIGHT_BRACKET statement ELSE statement |
         IF LEFT_BRACKET expression RIGHT_BRACKET statement |
-        SWITCH LEFT_BRACKET RIGHT_BRACKET LEFT_CURLY_BRACKET switch_statement RIGHT_BRACKET
+        SWITCH LEFT_BRACKET RIGHT_BRACKET LEFT_CURLY_BRACKET switch_clauses RIGHT_BRACKET
         ;
 
-switch_statement: 
-        cases_without_default |
-        cases_with_default
-        ;
-
-cases_with_default:
-        case_statement default_statement
-        ;
-
-cases_without_default: 
-        cases 
+switch_clauses: 
+        cases default_statement|
+        cases
         ;
 
 cases:

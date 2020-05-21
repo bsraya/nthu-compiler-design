@@ -1,0 +1,35 @@
+#pragma source off
+#pragma source on
+#pragma token off
+#pragma token on
+#pragma source off     
+#pragma source on        
+#pragma token off         
+#pragma token on          
+#pragma         source off
+#pragma         source on
+#pragma         token off
+#pragma         token on
+#pragma source             off
+#pragma source               on
+#pragma token         off
+#pragma token       on
+    #pragma source off
+    #pragma source on
+    #pragma token off
+    #pragma token on
+int
+//comment
+#pragma source off
+int
+//comment
+#pragma source on
+int
+//comment
+#pragma token off
+int
+//comment
+#pragma token on
+int
+//comment
+
