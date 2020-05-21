@@ -33,7 +33,26 @@
 %%
 
 start: 
-        declaration function
+        zero_or_more_declaration function_definition
+        ;
+
+zero_or_more_declaration:
+        zero_or_more_declaration external_declaration |
+        ;
+
+external_declaration:
+        function_definition | 
+        declaration
+        ;
+
+declarations:
+        declarations declaration |
+        declaration
+        ;
+
+declaration:
+        declaration_with_const |
+        declaration_without_const
         ;
 
 datatype: 
@@ -45,16 +64,6 @@ datatype:
 
 const_datatype: 
         CONST datatype
-        ;
-
-declarations:
-        declarations declaration |
-        declaration
-        ;
-
-declaration:
-        declaration_with_const |
-        declaration_without_const
         ;
 
 unary_operator: 
@@ -81,7 +90,21 @@ initializers:
 
 initializer:
         LEFT_CURLY_BRACKET RIGHT_CURLY_BRACKET |
-        LEFT_CURLY_BRACKET initializers COMMA RIGHT_CURLY_BRACKET
+        LEFT_CURLY_BRACKET initializers COMMA RIGHT_CURLY_BRACKET |
+        assignment_expression_without_function
+        ;
+
+designation:
+        designators EQUAL_TO
+        ;
+
+designators:
+        designators designator |
+        designator
+        ;
+
+designator:
+        DOT TOKEN_IDENTIFIER
         ;
 
 
@@ -95,18 +118,52 @@ scalar_declaration:
 
 /* Function declaration -> 10pts *\
 function_definition:
-        no_const_variable_declaration no_const_direct_declare declarations compound_statement|
-        no_const_variable_declaration no_const_direct_declare compound_statement |
+        datatype no_const_direct_declare declarations compound_statement|
+        datatype no_const_direct_declare compound_statement |
         VOID no_const_direct_declare declarations compound_statement |
         VOID no_const_direct_declare compound_statement
         ;
 
 
-function_declaration: ;
-
 /* Expression -> 30pts (precedence & associativity) *\
-expression:
+expression_statement:
+        expressions SEMICOLON |
+        SEMICOLON
         ;
+
+expressions:
+        expressions COMMA assignment_expression |
+        assignment_expression
+        ;
+
+assignment_expression_without_function:
+
+        ;
+
+assignment_expression:
+        unary_expression EQUAL_TO assignment_expression |
+        logical_or_expression
+
+        ;
+
+logical_or_without_function:
+        
+        ;
+
+logical_or:
+        logical_or OR logical_and |
+        logical_and
+        ;
+
+logical_and_without_function:
+        
+        ;
+        `
+logical_and:
+        logical_and AND  |
+
+        ;   
+
 
 /* Variable declaration -> 10pts (Scalar, Array, and Const declaration with initialization) *\
 const_variable_declaration: 
@@ -122,6 +179,9 @@ const_variables:
 const_variable:
         const_direct_declare EQUAL initializer |
         const_direct_declare
+        ;
+
+declare_const_variable:
         ;
 
 const_direct_declare:
@@ -147,7 +207,11 @@ no_const_variable:
         no_const_direct_declare
         ;
 
+declare_no_const_variable:
+        ;
+
 no_const_direct_declare: 
+        no_const_direct_declare LEFT_SQUARE_BRACKET TOKEN_INTEGER RIGHT_SQUARE_BRACKET |
         no_const_direct_declare LEFT_BRACKET identifiers RIGHT_BRACKET |
         no_const_direct_declare LEFT_BRACKET parameters RIGHT_BRACKET |
         no_const_direct_declare LEFT_BRACKET RIGHT_BRACKET |
@@ -191,7 +255,6 @@ statement:
 
 statements: 
         statements statement |
-        statement
         ;
 
 compound_statement:
@@ -219,11 +282,11 @@ cases:
         ;
 
 case_statement:
-        CASE constant_expression COLON statement
+        CASE constant_expression COLON statements
         ;
 
 default_statement:
-        DEFAULT COLON statement
+        DEFAULT COLON statements
         ;
 
 iteration_statement:
@@ -240,38 +303,3 @@ skip:
         CONTINUE SEMICOLON | 
         BREAK SEMICOLON | 
         RETURN SEMICOLON;
-
-
-
-/* expressions */
-expression_statement:
-        expression SEMICOLON |
-        SEMICOLON
-        ;
-
-expression:
-        
-        ;
-
-logical_or:
-        logical_or OR logical_and |
-        logical_and
-        ;
-
-logical_and:
-        logical_and AND  |
-
-        ;       
-
-
-
-
-/* Function definition -> 10pts *\
-
-declaration: 
-        declaration external_declaration | ;
-
-external_declaration: 
-        function | 
-        declaration;
-

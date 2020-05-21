@@ -172,49 +172,49 @@ LIST_OF_KEYWORD             		        ("goto"|"register"|"sizeof"|"typedef"|"vol
 "case"                                      { strcat(cur_line_content, yytext); print(0); return CASE;                 }
 "default"                                   { strcat(cur_line_content, yytext); print(0); return DEFAULT;              }
 
-"fclose"		                            { strcat(cur_line_content, yytext); print(0); return FCLOSE;               }
-"clearerr"		                            { strcat(cur_line_content, yytext); print(0); return CLEARERR;             }
-"feof"			                            { strcat(cur_line_content, yytext); print(0); return FEOF;                 }           
-"ferror"                                    { strcat(cur_line_content, yytext); print(0); return FERROR;               } 
-"fflush"		                            { strcat(cur_line_content, yytext); print(0); return FFLUSH;               }
-"fgetpos"                                   { strcat(cur_line_content, yytext); print(0); return FGETPOS;              }
-"fopen"                                     { strcat(cur_line_content, yytext); print(0); return FOPEN;                }
-"fread"                                     { strcat(cur_line_content, yytext); print(0); return FREAD;                }
-"freopen"                                   { strcat(cur_line_content, yytext); print(0); return FREOPEN;              }
-"fseek"			                            { strcat(cur_line_content, yytext); print(0); return FSEEK;                }
-"fsetpos"                                   { strcat(cur_line_content, yytext); print(0); return FSETPOS;              }
-"ftell"			                            { strcat(cur_line_content, yytext); print(0); return FTELL;                }
-"fwrite"                                    { strcat(cur_line_content, yytext); print(0); return FWRITE;               }
-"remove"		                            { strcat(cur_line_content, yytext); print(0); return REMOVE;               }
-"rename"                                    { strcat(cur_line_content, yytext); print(0); return RENAME;               }
-"rewind"		                            { strcat(cur_line_content, yytext); print(0); return REWIND;               }
-"setbuf"                                    { strcat(cur_line_content, yytext); print(0); return SETBUF;               }
-"setvbuf"                                   { strcat(cur_line_content, yytext); print(0); return SETVBUF;              }
-"tmpfile"                                   { strcat(cur_line_content, yytext); print(0); return TMPFILE;              }
-"tmpnam"                                    { strcat(cur_line_content, yytext); print(0); return TMPNAM;               }
-"fprintf"                                   { strcat(cur_line_content, yytext); print(0); return FPRINTF;              }
-"printf" 		                            { strcat(cur_line_content, yytext); print(0); return PRINTF;               }  
-"sprintf" 		                            { strcat(cur_line_content, yytext); print(0); return SPRINTF;              }
-"vfprintf"                                  { strcat(cur_line_content, yytext); print(0); return VFPRINTF;             }
-"vprintf"                                   { strcat(cur_line_content, yytext); print(0); return VPRINTF;              }
-"vsprintf"                                  { strcat(cur_line_content, yytext); print(0); return VSPRINTF;             }
-"fscanf"                                    { strcat(cur_line_content, yytext); print(0); return FSCANF;               }
-"scanf"			                            { strcat(cur_line_content, yytext); print(0); return SCANF;                }
-"sscanf"		                            { strcat(cur_line_content, yytext); print(0); return SSCANF;               }
-"fgetc"			                            { strcat(cur_line_content, yytext); print(0); return FGETC;                }        
-"fgets"			                            { strcat(cur_line_content, yytext); print(0); return FGETS;                }
-"fputc"			                            { strcat(cur_line_content, yytext); print(0); return FPUTC;                }
-"fputs"			                            { strcat(cur_line_content, yytext); print(0); return FPUTS;                }
-"getc"			                            { strcat(cur_line_content, yytext); print(0); return GETC;                 }
-"getchar"		                            { strcat(cur_line_content, yytext); print(0); return GETCHAR;              }
-"gets"			                            { strcat(cur_line_content, yytext); print(0); return GETS;                 }
-"putc"			                            { strcat(cur_line_content, yytext); print(0); return PUTC;                 }
-"putchar"		                            { strcat(cur_line_content, yytext); print(0); return PUTCHAR;              }
-"puts"			                            { strcat(cur_line_content, yytext); print(0); return PUTS;                 }
-"ungetc"                                    { strcat(cur_line_content, yytext); print(0); return UNGETC;               }
-"perror"                                    { strcat(cur_line_content, yytext); print(0); return PERROR;               }
-"getw"			                            { strcat(cur_line_content, yytext); print(0); return GETW;                 }
-"putw"			                            { strcat(cur_line_content, yytext); print(0); return PUTW;                 }
+"fclose"		                            { strcat(cur_line_content, yytext); print(0); }
+"clearerr"		                            { strcat(cur_line_content, yytext); print(0); }
+"feof"			                            { strcat(cur_line_content, yytext); print(0); }           
+"ferror"                                    { strcat(cur_line_content, yytext); print(0); } 
+"fflush"		                            { strcat(cur_line_content, yytext); print(0); }
+"fgetpos"                                   { strcat(cur_line_content, yytext); print(0); }
+"fopen"                                     { strcat(cur_line_content, yytext); print(0); }
+"fread"                                     { strcat(cur_line_content, yytext); print(0); }
+"freopen"                                   { strcat(cur_line_content, yytext); print(0); }
+"fseek"			                            { strcat(cur_line_content, yytext); print(0); }
+"fsetpos"                                   { strcat(cur_line_content, yytext); print(0); }
+"ftell"			                            { strcat(cur_line_content, yytext); print(0); }
+"fwrite"                                    { strcat(cur_line_content, yytext); print(0); }
+"remove"		                            { strcat(cur_line_content, yytext); print(0); }
+"rename"                                    { strcat(cur_line_content, yytext); print(0); }
+"rewind"		                            { strcat(cur_line_content, yytext); print(0); }
+"setbuf"                                    { strcat(cur_line_content, yytext); print(0); }
+"setvbuf"                                   { strcat(cur_line_content, yytext); print(0); }
+"tmpfile"                                   { strcat(cur_line_content, yytext); print(0); }
+"tmpnam"                                    { strcat(cur_line_content, yytext); print(0); }
+"fprintf"                                   { strcat(cur_line_content, yytext); print(0); }
+"printf" 		                            { strcat(cur_line_content, yytext); print(0); }  
+"sprintf" 		                            { strcat(cur_line_content, yytext); print(0); }
+"vfprintf"                                  { strcat(cur_line_content, yytext); print(0); }
+"vprintf"                                   { strcat(cur_line_content, yytext); print(0); }
+"vsprintf"                                  { strcat(cur_line_content, yytext); print(0); }
+"fscanf"                                    { strcat(cur_line_content, yytext); print(0); }
+"scanf"			                            { strcat(cur_line_content, yytext); print(0); }
+"sscanf"		                            { strcat(cur_line_content, yytext); print(0); }
+"fgetc"			                            { strcat(cur_line_content, yytext); print(0); }        
+"fgets"			                            { strcat(cur_line_content, yytext); print(0); }
+"fputc"			                            { strcat(cur_line_content, yytext); print(0); }
+"fputs"			                            { strcat(cur_line_content, yytext); print(0); }
+"getc"			                            { strcat(cur_line_content, yytext); print(0); }
+"getchar"		                            { strcat(cur_line_content, yytext); print(0); }
+"gets"			                            { strcat(cur_line_content, yytext); print(0); }
+"putc"			                            { strcat(cur_line_content, yytext); print(0); }
+"putchar"		                            { strcat(cur_line_content, yytext); print(0); }
+"puts"			                            { strcat(cur_line_content, yytext); print(0); }
+"ungetc"                                    { strcat(cur_line_content, yytext); print(0); }
+"perror"                                    { strcat(cur_line_content, yytext); print(0); }
+"getw"			                            { strcat(cur_line_content, yytext); print(0); }
+"putw"			                            { strcat(cur_line_content, yytext); print(0); }
 
 "+"                                         { strcat(cur_line_content, yytext); print(1); return PLUS;                 }
 "-"                                         { strcat(cur_line_content, yytext); print(1); return MINUS;                }
