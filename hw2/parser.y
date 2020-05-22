@@ -11,7 +11,7 @@
 }
 
 /* primitive datatypes */
-%token DATATYPE_INT DATATYPE_DOUBLE DATATYPE_FLOAT DATATYPE_CHAR DATATYPE_BOOL
+%token DATATYPE_INT DATATYPE_DOUBLE DATATYPE_FLOAT DATATYPE_CHAR
 
 /* reserved words */
 %token RESERVED_TRUE, RESERVED_FALSE, RESERVED_NULL;
@@ -56,11 +56,10 @@ declaration:
         ;
 
 datatype: 
-        DATATYPE_INT { fprintf(stdout, "int"); } | 
-        DATATYPE_DOUBLE { fprintf(stdout, "double"); } | 
-        DATATYPE_FLOAT { fprintf(stdout, "float"); } | 
-        DATATYPE_CHAR { fprintf(stdout, "char"); } |
-        DATATYPE_BOOL { fprintf(stdout, "bool"); }
+        DATATYPE_INT | 
+        DATATYPE_DOUBLE | 
+        DATATYPE_FLOAT | 
+        DATATYPE_CHAR
         ;
 
 const_datatype: 
@@ -68,12 +67,12 @@ const_datatype:
         ;
 
 unary_operator: 
-        BITWISE_COMPLEMENT {fprintf(stdout, "~");} | 
-        PLUS {fprintf(stdout, "+");} | 
-        MINUS {fprintf(stdout, "-");} | 
-        LOGICAL_NOT {fprintf(stdout, "!");} |
-        INCREMENT {fprintf(stdout, "++");} |
-        DECREMENT {fprintf(stdout, "--");}
+        BITWISE_COMPLEMENT | 
+        PLUS | 
+        MINUS | 
+        LOGICAL_NOT |
+        INCREMENT |
+        DECREMENT
         ;
 
 constant: 
@@ -137,135 +136,34 @@ expressions:
         assignment_expression
         ;
 
-assignment_expression:
-        unary_expression_without_function EQUAL_TO assignment_expression_without_function |
-        logical_or_expression
-        ;
-
 assignment_expression_without_function:
-        unary_expression_without_function EQUAL_TO assignment_expression_without_function|
-        logical_or_expression_without_function
+
         ;
 
+assignment_expression:
+        unary_expression EQUAL_TO assignment_expression |
+        logical_or_expression
 
-unary_expression:
-        postfix_expression |
-        INCREMENT unary_expression |
-        DECREMENT unary_expression |
-        unary_operator unary_operator
         ;
 
-unary_expression_without_function:
-        postfix_expression_without_function |
-        INCREMENT unary_expression_without_function |
-        DECREMENT unary_expression_without_function |
-        unary_operator unary_expression_without_function
-        ;
-
-logical_or_expression_without_function:
-        logical_or_expression_without_function LOGICAL_OR logical_and_expression_without_function
-        ;
-
-logical_or_expression:
-        logical_or_expression OR logical_and_expression |
-        logical_and_expression
-        ;
-
-logical_and_expression_without_function:
+logical_or_without_function:
         
         ;
 
-and_expression_without_function
-		: equality_expression_without_function
-		| and_expression_without_function BITWISE_AND equality_expression_without_function
-		;
+logical_or:
+        logical_or OR logical_and |
+        logical_and
+        ;
 
-equality_expression_without_function
-		: relational_expression_without_function
-		| equality_expression_without_function EQUAL_TO relational_expression_without_function
-		| equality_expression_without_function NOT_EQUAL_TO relational_expression_without_function
-		;
-
-relational_expression_without_func
-		: additive_expression_without_function
-		| relational_expression_without_function GREATER additive_expression_without_function
-		| relational_expression_without_function GREATER_THAN additive_expression_without_function
-		| relational_expression_without_function LESS additive_expression_without_function
-		| relational_expression_without_function LESS_THAN additive_expression_without_function
-		;
-
-additive_expression_without_function
-		: multiplicative_expression_without_function
-		| additive_expression_without_function PLUS multiplicative_expression_without_function
-		| additive_expression_without_function MINUS multiplicative_expression_without_function
-		;
-
-multiplicative_expression_without_function
-		: unary_expression_without_function
-		| multiplicative_expression_without_function MULTIPLE unary_expression_without_function
-		| multiplicative_expression_without_function DIVIDE unary_expression_without_function
-		| multiplicative_expression_without_function MOD unary_expression_without_function
-		;
-
-unary_expression_without_function
-		: postfix_expression_without_function
-		| INCREMENT unary_expression_without_function
-		| DECREMENT unary_expression_without_function
-		| unary_operator unary_expression_without_function
-		; 
-
-
-
-
-
-
-
-
-
-
-
+logical_and_without_function:
         
-logical_and_expression:
-        logical_and_expression AND and |
+        ;
+        `
+logical_and:
+        logical_and AND  |
 
         ;   
 
-postfix_expression:
-        primary_expression |
-        postfix_expression PUNC_LBRACKET expression PUNC_RBRACKET |
-	postfix_expression LEFT_BRACKET RIGHT_BRACKET |
-	postfix_expression LEFT_BRACKET argument_expressions RIGHT_BRACKET |
-	postfix_expression DOT TOKEN_IDENTIFIER |
-	postfix_expression INCREMENT |
-	postfix_expression DECREMENT 
-        ;
-
-postfix_expression_without_function:
-        primary_expression_without_func |
-        postfix_expression_without_func LEFT_SQUARE_BRACKET TOKEN_INTEGER LEFT_SQUARE_BRACKET | 
-        postfix_expression_without_func DOT TOKEN_IDENTIFIER | 
-        postfix_expression_without_func INCREMENT | 
-        postfix_expression_without_func DECREMENT
-        ;
-
-primary_expression:
-        LEFT_BRACKET expression RIGHT_BRACKET |
-        TOKEN_STRING | 
-        TOKEN_ID | 
-        constant
-        ;
-
-primary_expression_without_func:
-        LEFT_BRACKET expression RIGHT_BRACKET |
-        TOKEN_STRING | 
-        TOKEN_ID | 
-        constant
-        ;
-
-argument_expressions: 
-        assignment_expression
-        argument_expressions COMMA assignment_expression
-        ;
 
 /* Variable declaration -> 10pts (Scalar, Array, and Const declaration with initialization) *\
 const_variable_declaration: 
@@ -305,7 +203,7 @@ no_const_variables:
         ;
 
 no_const_variable: 
-        no_const_direct_declare EQUAL_TO initializer |
+        no_const_direct_declare EQUAL initializer |
         no_const_direct_declare
         ;
 
@@ -352,8 +250,7 @@ statement:
         compound_statement |
         expression_statement | 
         selection_statement |
-        iteration_statement |
-        jump_statement
+        iteration_statement
         ;
 
 statements: 
@@ -401,7 +298,7 @@ iteration_statement:
         FOR LEFT_BRACKET RIGHT_BRACKET
         ;
 
-jump_statement: 
+skip: 
         RETURN expression SEMICOLON | 
         CONTINUE SEMICOLON | 
         BREAK SEMICOLON | 
