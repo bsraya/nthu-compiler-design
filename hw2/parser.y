@@ -1,4 +1,4 @@
-%top{
+%{
         #include <stdio.h>
         int yylex();
         void yyerror(char* error_message);
@@ -8,7 +8,7 @@
                 printf("Parsed Successfully");
                 return 0;
         }
-}
+%}
 
 /* primitive datatypes */
 %token DATATYPE_INT DATATYPE_DOUBLE DATATYPE_FLOAT DATATYPE_CHAR
@@ -29,6 +29,13 @@
 %token TOKEN_IDENTIFIER TOKEN_STRING TOKEN_CHARACTER TOKEN_INTEGER TOKEN_DOUBLE TOKEN_SCI_NOT
 
 %start start
+
+%union {
+        int intValue;
+        char charValue;
+        char *stringValue;
+        double doubleValue;
+}
 
 %%
 
@@ -113,10 +120,10 @@ scalar_declaration:
         scalar_with_const | /* only for variables */
         scalar_wihtout_const /* variables & array */
         ;
-/* Array declaration without initialization -> 10pts *\
+/* Array declaration without initialization -> 10pts */
 
 
-/* Function declaration -> 10pts *\
+/* Function declaration -> 10pts */
 function_definition:
         datatype no_const_direct_declare declarations compound_statement|
         datatype no_const_direct_declare compound_statement |
@@ -125,7 +132,7 @@ function_definition:
         ;
 
 
-/* Expression -> 30pts (precedence & associativity) *\
+/* Expression -> 30pts (precedence & associativity) */
 expression_statement:
         expressions SEMICOLON |
         SEMICOLON
@@ -162,8 +169,88 @@ logical_and_without_function:
 logical_and:
         logical_and AND  |
 
+and_expression_without_function
+		: equality_expression_without_function
+		| and_expression_without_function BITWISE_AND equality_expression_without_function
+		;
+
+equality_expression_without_function
+		: relational_expression_without_function
+		| equality_expression_without_function EQUAL_TO relational_expression_without_function
+		| equality_expression_without_function NOT_EQUAL_TO relational_expression_without_function
+		;
+
+relational_expression_without_func
+		: additive_expression_without_function
+		| relational_expression_without_function GREATER additive_expression_without_function
+		| relational_expression_without_function GREATER_THAN additive_expression_without_function
+		| relational_expression_without_function LESS additive_expression_without_function
+		| relational_expression_without_function LESS_THAN additive_expression_without_function
+		;
+
+additive_expression_without_function
+		: multiplicative_expression_without_function
+		| additive_expression_without_function PLUS multiplicative_expression_without_function
+		| additive_expression_without_function MINUS multiplicative_expression_without_function
+		;
+
+multiplicative_expression_without_function
+		: unary_expression_without_function
+		| multiplicative_expression_without_function MULTIPLE unary_expression_without_function
+		| multiplicative_expression_without_function DIVIDE unary_expression_without_function
+		| multiplicative_expression_without_function MOD unary_expression_without_function
+		;
+
+unary_expression_without_function
+		: postfix_expression_without_function
+		| INCREMENT unary_expression_without_function
+		| DECREMENT unary_expression_without_function
+		| unary_operator unary_expression_without_function
+		; 
+
+
+
+
+
+
+
+
+
+
+
+        
+logical_and_expression:
+        logical_and_expression AND and |
+
         ;   
 
+
+postfix_expression_without_function:
+        primary_expression_without_func |
+        postfix_expression_without_func LEFT_SQUARE_BRACKET TOKEN_INTEGER LEFT_SQUARE_BRACKET | 
+        postfix_expression_without_func DOT TOKEN_IDENTIFIER | 
+        postfix_expression_without_func INCREMENT | 
+        postfix_expression_without_func DECREMENT
+        ;
+
+primary_expression:
+        LEFT_BRACKET expression RIGHT_BRACKET |
+        TOKEN_STRING | 
+        TOKEN_ID | 
+        constant
+        ;
+
+primary_expression_without_func:
+        LEFT_BRACKET expression RIGHT_BRACKET |
+        TOKEN_STRING | 
+        TOKEN_ID | 
+        constant
+        ;
+
+argument_expressions: 
+        assignment_expression
+        argument_expressions COMMA assignment_expression
+        ;
 
 /* Variable declaration -> 10pts (Scalar, Array, and Const declaration with initialization) *\
 const_variable_declaration: 
@@ -240,7 +327,7 @@ parameter_declaration:
 
 
 
-/* Statements -> 10pts *\
+/* Statements -> 10pts */
 constant_expression:
         TOKEN_INTEGER |
         TOKEN_CHARACTER
