@@ -55,156 +55,156 @@ LIST_OF_KEYWORD             		        ("goto"|"register"|"sizeof"|"typedef"|"vol
 %%
 
 [\n]                                        { newline();                                                                }
-[ \t\r]+                                    { strcat(cur_line_content, yytext);                                         }
+[ \t\r]+                                    return;
 
-{SOURCEOFF}                                 { sourceOn = 0; strcat(cur_line_content, yytext);                           }
-{SOURCEON}                                  { sourceOn = 1; strcat(cur_line_content, yytext);                           }          
-{TOKENOFF}                                  { tokenOn = 0;  strcat(cur_line_content, yytext);                           }
-{TOKENON}                                   { tokenOn = 1;  strcat(cur_line_content, yytext);                           }
+{SOURCEOFF}                                 { sourceOn = 0;                           }
+{SOURCEON}                                  { sourceOn = 1;                           }          
+{TOKENOFF}                                  { tokenOn = 0;                            }
+{TOKENON}                                   { tokenOn = 1;                            }
 
-{IDENTIFIER}                                { strcat(cur_line_content, yytext); return TOKEN_IDENTIFIER;      }
-{ZERO}                                      { strcat(cur_line_content, yytext); return TOKEN_INTEGER;         }
-{VALID_INTEGER}	                            { strcat(cur_line_content, yytext); return TOKEN_INTEGER;         }
-{DOUBLE}                                    { strcat(cur_line_content, yytext); return TOKEN_DOUBLE;          }
-{ZERO_DOUBLE}                               { strcat(cur_line_content, yytext); return TOKEN_DOUBLE;          }
-{NO_ZERO_DOUBLE}                            { strcat(cur_line_content, yytext); return TOKEN_DOUBLE;          }
-{VALID_SCIENTIFIC_NOTATION}                 { strcat(cur_line_content, yytext); return TOKEN_SCI_NOT;         }
-{CHARACTER}                                 { strcat(cur_line_content, yytext); return TOKEN_CHARACTER;       }
-{CHARACTER_SPACES}                          { strcat(cur_line_content, yytext); return TOKEN_CHARACTER;       }
-{STRING}                                    { strcat(cur_line_content, yytext); return TOKEN_STRING;          }
+{IDENTIFIER}                                { return TOKEN_IDENTIFIER;      }
+{ZERO}                                      { return TOKEN_INTEGER;         }
+{VALID_INTEGER}	                            { return TOKEN_INTEGER;         }
+{DOUBLE}                                    { return TOKEN_DOUBLE;          }
+{ZERO_DOUBLE}                               { return TOKEN_DOUBLE;          }
+{NO_ZERO_DOUBLE}                            { return TOKEN_DOUBLE;          }
+{VALID_SCIENTIFIC_NOTATION}                 { return TOKEN_SCI_NOT;         }
+{CHARACTER}                                 { return TOKEN_CHARACTER;       }
+{CHARACTER_SPACES}                          { return TOKEN_CHARACTER;       }
+{STRING}                                    { return TOKEN_STRING;          }
 
 
-{COMMENT}                                   { strcat(cur_line_content, yytext);                                         }
-"/*"				                        { BEGIN(MULTILINE_COMMENT); strcat(cur_line_content, yytext);               }
-<MULTILINE_COMMENT>[^*\n]*                  { strcat(cur_line_content, yytext);                                         }
-<MULTILINE_COMMENT>"*"+[^*/\n]*             { strcat(cur_line_content, yytext);                                         }
+{COMMENT}                                   {                                         }
+"/*"				                        { BEGIN(MULTILINE_COMMENT);               }
+<MULTILINE_COMMENT>[^*\n]*                  {                                         }
+<MULTILINE_COMMENT>"*"+[^*/\n]*             {                                         }
 <MULTILINE_COMMENT>\n 		                { newline();                                                                }
 <MULTILINE_COMMENT>"*"+"/"	                { BEGIN(INITIAL); strcat(cur_line_content,yytext);                          }
 
-"bool"                                      { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content, yytext); return DATATYPE_BOOL;         }
-"int"                                       { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content, yytext); return DATATYPE_INT;          }
-"double"                                    { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content, yytext); return DATATYPE_DOUBLE;       }
-"char"                                      { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content, yytext); return DATATYPE_CHAR;         }
-"float"                                     { BEGIN(VARIABLE_ASSIGNMENT); strcat(cur_line_content, yytext); return DATATYPE_FLOAT;        }
-<VARIABLE_ASSIGNMENT>"="			        { BEGIN(INITIAL);             strcat(cur_line_content, yytext); return ASSIGN_EQUAL;          }
-<VARIABLE_ASSIGNMENT>";"			        { BEGIN(INITIAL);             strcat(cur_line_content, yytext); return SEMICOLON;             }
-<VARIABLE_ASSIGNMENT>{IDENTIFIER}           { BEGIN(INITIAL);             strcat(cur_line_content, yytext); return TOKEN_IDENTIFIER;      }
-<VARIABLE_ASSIGNMENT>"*"			        {                             strcat(cur_line_content, yytext); return MULTIPLE;              }
-<VARIABLE_ASSIGNMENT>[ \t\r]+   	        { strcat(cur_line_content, yytext);                                                                     }
+"bool"                                      { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_BOOL;         }
+"int"                                       { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_INT;          }
+"double"                                    { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_DOUBLE;       }
+"char"                                      { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_CHAR;         }
+"float"                                     { BEGIN(VARIABLE_ASSIGNMENT); return DATATYPE_FLOAT;        }
+<VARIABLE_ASSIGNMENT>"="			        { BEGIN(INITIAL);             return ASSIGN_EQUAL;          }
+<VARIABLE_ASSIGNMENT>";"			        { BEGIN(INITIAL);             return SEMICOLON;             }
+<VARIABLE_ASSIGNMENT>{IDENTIFIER}           { BEGIN(INITIAL);             return TOKEN_IDENTIFIER;      }
+<VARIABLE_ASSIGNMENT>"*"			        {                             return MULTIPLE;              }
+<VARIABLE_ASSIGNMENT>[ \t\r]+   	        {                                                                     }
 <VARIABLE_ASSIGNMENT>{LIST_OF_KEYWORD}	    { raise_error(); return 0;                                                                              }
 <VARIABLE_ASSIGNMENT>.			            { raise_error(); return 0;                                                                              }
 
-"true"                                      { strcat(cur_line_content, yytext); return RESERVED_TRUE;        }
-"false"                                     { strcat(cur_line_content, yytext); return RESERVED_FALSE;       }
-"null"                                      { strcat(cur_line_content, yytext); return RESERVED_NULL;        }
+"true"                                      { return RESERVED_TRUE;        }
+"false"                                     { return RESERVED_FALSE;       }
+"null"                                      { return RESERVED_NULL;        }
 
-"void"                                      { strcat(cur_line_content, yytext); return VOID;                 }
-"for"                                       { strcat(cur_line_content, yytext); return FOR;                  }
-"do"                                        { strcat(cur_line_content, yytext); return DO;                   }
-"while"                                     { strcat(cur_line_content, yytext); return WHILE;                }
-"break"                                     { strcat(cur_line_content, yytext); return BREAK;                }
-"continue"                                  { strcat(cur_line_content, yytext); return CONTINUE;             }
-"if"                                        { strcat(cur_line_content, yytext); return IF;                   }
-"else"                                      { strcat(cur_line_content, yytext); return ELSE;                 }
-"auto"                                      { strcat(cur_line_content, yytext); return AUTO;                 }            
-"const"                                     { strcat(cur_line_content, yytext); return CONST;                }
-"static"                                    { strcat(cur_line_content, yytext); return STATIC;               }
-"union"                                     { strcat(cur_line_content, yytext); return UNION;                }
-"enum"                                      { strcat(cur_line_content, yytext); return ENUM;                 }
-"goto"                                      { strcat(cur_line_content, yytext); return GOTO;                 }
-"register"                                  { strcat(cur_line_content, yytext); return REGISTER;             }
-"sizeof"                                    { strcat(cur_line_content, yytext); return SIZEOF;               }
-"typedef"                                   { strcat(cur_line_content, yytext); return TYPEDEF;              }
-"volatile"                                  { strcat(cur_line_content, yytext); return VOLATILE;             }
-"extern"                                    { strcat(cur_line_content, yytext); return EXTERN;               }
-"return"                                    { strcat(cur_line_content, yytext); return RETURN;               }
-"struct"                                    { strcat(cur_line_content, yytext); return STRUCT;               }
-"switch"                                    { strcat(cur_line_content, yytext); return SWITCH;               }
-"case"                                      { strcat(cur_line_content, yytext); return CASE;                 }
-"default"                                   { strcat(cur_line_content, yytext); return DEFAULT;              }
+"void"                                      { return VOID;                 }
+"for"                                       { return FOR;                  }
+"do"                                        { return DO;                   }
+"while"                                     { return WHILE;                }
+"break"                                     { return BREAK;                }
+"continue"                                  { return CONTINUE;             }
+"if"                                        { return IF;                   }
+"else"                                      { return ELSE;                 }
+"auto"                                      { return AUTO;                 }            
+"const"                                     { return CONST;                }
+"static"                                    { return STATIC;               }
+"union"                                     { return UNION;                }
+"enum"                                      { return ENUM;                 }
+"goto"                                      { return GOTO;                 }
+"register"                                  { return REGISTER;             }
+"sizeof"                                    { return SIZEOF;               }
+"typedef"                                   { return TYPEDEF;              }
+"volatile"                                  { return VOLATILE;             }
+"extern"                                    { return EXTERN;               }
+"return"                                    { return RETURN;               }
+"struct"                                    { return STRUCT;               }
+"switch"                                    { return SWITCH;               }
+"case"                                      { return CASE;                 }
+"default"                                   { return DEFAULT;              }
 
-"fclose"		                            { strcat(cur_line_content, yytext); }
-"clearerr"		                            { strcat(cur_line_content, yytext); }
-"feof"			                            { strcat(cur_line_content, yytext); }           
-"ferror"                                    { strcat(cur_line_content, yytext); } 
-"fflush"		                            { strcat(cur_line_content, yytext); }
-"fgetpos"                                   { strcat(cur_line_content, yytext); }
-"fopen"                                     { strcat(cur_line_content, yytext); }
-"fread"                                     { strcat(cur_line_content, yytext); }
-"freopen"                                   { strcat(cur_line_content, yytext); }
-"fseek"			                            { strcat(cur_line_content, yytext); }
-"fsetpos"                                   { strcat(cur_line_content, yytext); }
-"ftell"			                            { strcat(cur_line_content, yytext); }
-"fwrite"                                    { strcat(cur_line_content, yytext); }
-"remove"		                            { strcat(cur_line_content, yytext); }
-"rename"                                    { strcat(cur_line_content, yytext); }
-"rewind"		                            { strcat(cur_line_content, yytext); }
-"setbuf"                                    { strcat(cur_line_content, yytext); }
-"setvbuf"                                   { strcat(cur_line_content, yytext); }
-"tmpfile"                                   { strcat(cur_line_content, yytext); }
-"tmpnam"                                    { strcat(cur_line_content, yytext); }
-"fprintf"                                   { strcat(cur_line_content, yytext); }
-"printf" 		                            { strcat(cur_line_content, yytext); }  
-"sprintf" 		                            { strcat(cur_line_content, yytext); }
-"vfprintf"                                  { strcat(cur_line_content, yytext); }
-"vprintf"                                   { strcat(cur_line_content, yytext); }
-"vsprintf"                                  { strcat(cur_line_content, yytext); }
-"fscanf"                                    { strcat(cur_line_content, yytext); }
-"scanf"			                            { strcat(cur_line_content, yytext); }
-"sscanf"		                            { strcat(cur_line_content, yytext); }
-"fgetc"			                            { strcat(cur_line_content, yytext); }        
-"fgets"			                            { strcat(cur_line_content, yytext); }
-"fputc"			                            { strcat(cur_line_content, yytext); }
-"fputs"			                            { strcat(cur_line_content, yytext); }
-"getc"			                            { strcat(cur_line_content, yytext); }
-"getchar"		                            { strcat(cur_line_content, yytext); }
-"gets"			                            { strcat(cur_line_content, yytext); }
-"putc"			                            { strcat(cur_line_content, yytext); }
-"putchar"		                            { strcat(cur_line_content, yytext); }
-"puts"			                            { strcat(cur_line_content, yytext); }
-"ungetc"                                    { strcat(cur_line_content, yytext); }
-"perror"                                    { strcat(cur_line_content, yytext); }
-"getw"			                            { strcat(cur_line_content, yytext); }
-"putw"			                            { strcat(cur_line_content, yytext); }
+"fclose"		                            { }
+"clearerr"		                            { }
+"feof"			                            { }           
+"ferror"                                    { } 
+"fflush"		                            { }
+"fgetpos"                                   { }
+"fopen"                                     { }
+"fread"                                     { }
+"freopen"                                   { }
+"fseek"			                            { }
+"fsetpos"                                   { }
+"ftell"			                            { }
+"fwrite"                                    { }
+"remove"		                            { }
+"rename"                                    { }
+"rewind"		                            { }
+"setbuf"                                    { }
+"setvbuf"                                   { }
+"tmpfile"                                   { }
+"tmpnam"                                    { }
+"fprintf"                                   { }
+"printf" 		                            { }  
+"sprintf" 		                            { }
+"vfprintf"                                  { }
+"vprintf"                                   { }
+"vsprintf"                                  { }
+"fscanf"                                    { }
+"scanf"			                            { }
+"sscanf"		                            { }
+"fgetc"			                            { }        
+"fgets"			                            { }
+"fputc"			                            { }
+"fputs"			                            { }
+"getc"			                            { }
+"getchar"		                            { }
+"gets"			                            { }
+"putc"			                            { }
+"putchar"		                            { }
+"puts"			                            { }
+"ungetc"                                    { }
+"perror"                                    { }
+"getw"			                            { }
+"putw"			                            { }
 
-"+"                                         { strcat(cur_line_content, yytext); return PLUS;                 }
-"-"                                         { strcat(cur_line_content, yytext); return MINUS;                }
-"*"                                         { strcat(cur_line_content, yytext); return MULTIPLE;             }
-"/"                                         { strcat(cur_line_content, yytext); return DIVIDE;               }
-"%"                                         { strcat(cur_line_content, yytext); return MOD;                  }
-"++"                                        { strcat(cur_line_content, yytext); return INCREMENT;            }
-"--"                                        { strcat(cur_line_content, yytext); return DECREMENT;            }    
-"<"                                         { strcat(cur_line_content, yytext); return LESS;                 }
-"<="                                        { strcat(cur_line_content, yytext); return LESS_THAN;            }
-">"                                         { strcat(cur_line_content, yytext); return GREATER;              }
-">="                                        { strcat(cur_line_content, yytext); return GREATER_THAN;         }
-"=="                                        { strcat(cur_line_content, yytext); return EQUAL_TO;             }
-"!="                                        { strcat(cur_line_content, yytext); return NOT_EQUAL_TO;         }
-"="                                         { strcat(cur_line_content, yytext); return ASSIGN_EQUAL;         }
-"&&"                                        { strcat(cur_line_content, yytext); return LOGICAL_AND;          }
-"||"                                        { strcat(cur_line_content, yytext); return LOGICAL_OR;           }
-"!"                                         { strcat(cur_line_content, yytext); return LOGICAL_NOT;          }
-"&"                                         { strcat(cur_line_content, yytext); return BITWISE_AND;          }
-"|"                                         { strcat(cur_line_content, yytext); return BITWISE_OR;           }
-"^"                                         { strcat(cur_line_content, yytext); return BITWISE_XOR;          }
-"~"                                         { strcat(cur_line_content, yytext); return BITWISE_COMPLEMENT;   }
-"<<"                                        { strcat(cur_line_content, yytext); return LEFT_SHIFT;           }
-">>"                                        { strcat(cur_line_content, yytext); return RIGHT_SHIFT;          }
+"+"                                         { return PLUS;                 }
+"-"                                         { return MINUS;                }
+"*"                                         { return MULTIPLE;             }
+"/"                                         { return DIVIDE;               }
+"%"                                         { return MOD;                  }
+"++"                                        { return INCREMENT;            }
+"--"                                        { return DECREMENT;            }    
+"<"                                         { return LESS;                 }
+"<="                                        { return LESS_THAN;            }
+">"                                         { return GREATER;              }
+">="                                        { return GREATER_THAN;         }
+"=="                                        { return EQUAL_TO;             }
+"!="                                        { return NOT_EQUAL_TO;         }
+"="                                         { return ASSIGN_EQUAL;         }
+"&&"                                        { return LOGICAL_AND;          }
+"||"                                        { return LOGICAL_OR;           }
+"!"                                         { return LOGICAL_NOT;          }
+"&"                                         { return BITWISE_AND;          }
+"|"                                         { return BITWISE_OR;           }
+"^"                                         { return BITWISE_XOR;          }
+"~"                                         { return BITWISE_COMPLEMENT;   }
+"<<"                                        { return LEFT_SHIFT;           }
+">>"                                        { return RIGHT_SHIFT;          }
 
-"`"                                         { strcat(cur_line_content, yytext); return GRAVE_ACCENT;         }
-"#"                                         { strcat(cur_line_content, yytext); return POUND;                }
-"$"                                         { strcat(cur_line_content, yytext); return DOLLAR;               }
-":"			                                { strcat(cur_line_content, yytext); return COLON;                }
-";"				                            { strcat(cur_line_content, yytext); return SEMICOLON;            }
-","				                            { strcat(cur_line_content, yytext); return COMMA;                }
-"."				                            { strcat(cur_line_content, yytext); return DOT;                  }
-"["				                            { strcat(cur_line_content, yytext); return LEFT_SQUARE_BRACKET;  }
-"]"				                            { strcat(cur_line_content, yytext); return RIGHT_SQUARE_BRACKET; }
-"("				                            { strcat(cur_line_content, yytext); return LEFT_BRACKET;         }
-")"				                            { strcat(cur_line_content, yytext); return RIGHT_BRACKET;        }
-"{"				                            { strcat(cur_line_content, yytext); return LEFT_CURLY_BRACKET;   }
-"}"				                            { strcat(cur_line_content, yytext); return RIGHT_CURLY_BRACKET;  }
-"@"                                         { strcat(cur_line_content, yytext); return AT_SIGN;              }
+"`"                                         { return GRAVE_ACCENT;         }
+"#"                                         { return POUND;                }
+"$"                                         { return DOLLAR;               }
+":"			                                { return COLON;                }
+";"				                            { return SEMICOLON;            }
+","				                            { return COMMA;                }
+"."				                            { return DOT;                  }
+"["				                            { return LEFT_SQUARE_BRACKET;  }
+"]"				                            { return RIGHT_SQUARE_BRACKET; }
+"("				                            { return LEFT_BRACKET;         }
+")"				                            { return RIGHT_BRACKET;        }
+"{"				                            { return LEFT_CURLY_BRACKET;   }
+"}"				                            { return RIGHT_CURLY_BRACKET;  }
+"@"                                         { return AT_SIGN;              }
 
 {BACKSLASHES}                               { raise_error(); return 0; }
 {INVALID_INTEGER}                           { raise_error(); return 0; }
