@@ -113,11 +113,86 @@ type_spec:
 
 
 
-assignment_expr: ;
+assignment_expr: 
+    conditional_expr {
+        sprintf()
+    } |
+    unary_expr ASSIGN_EQUAL assignment_expr {
+        sprintf();
+    }
+    ;
 
-conditional_expr:;
 
-unary_expr: ;
+
+unary_expr: 
+    postfix_expr {
+        sprintf();
+    }
+    ;
+
+logical_or_expr: 
+    logical_and_expr {
+        sprintf();
+    }
+    ;
+
+logical_and_expr: 
+    inclusive_or_expr {
+        sprintf();
+    }
+    ;
+
+inclusive_or_expr: 
+    exclusive_or_expr {
+        sprintf();
+    }
+    ;
+
+exclusive_or_expr:
+    and_expr {
+        sprintf();
+    }
+    ;
+
+and_expr: ;
+
+equality_expr: ;
+
+relational_expr: ;
+
+shift_expr: ;
+
+additive_expr: ;
+
+multiplicative_expr: ;
+
+argument_expr_list: ;
+
+postfix_expr: ;
+
+primary_expr: 
+    TOKEN_IDENTIFIER {
+
+    } |
+    constant {
+
+    }
+    ;
+
+conditional_expr:
+    logical_or_expr {
+        sprintf();
+    }
+    ;
+
+
+constant: 
+    TOKEN_INTEGER | 
+    TOKEN_DOUBLE | 
+    TOKEN_SCI_NOT
+    ;
+
+func_def: ;
 
 
 

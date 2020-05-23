@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 %top{
     #include <string.h>
 
@@ -239,4 +237,3 @@ LIST_OF_KEYWORD             		        ("goto"|"register"|"sizeof"|"typedef"|"vol
 int yywrap() {
     return 1;
 } 
->>>>>>> master
