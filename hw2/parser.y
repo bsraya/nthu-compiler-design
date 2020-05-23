@@ -28,55 +28,78 @@
 /* token types */
 %token <string_val> TOKEN_IDENTIFIER TOKEN_STRING TOKEN_CHARACTER TOKEN_INTEGER TOKEN_DOUBLE TOKEN_SCI_NOT
 
+
+
 %start program
 
 %%
 
 program:
-    translation_unit {
+    trans_unit {
         sprintf(tmp, )
     }
     ;
 
-translation_unit:
-    external_declaration {
-
+trans_unit:
+    extern_decl {
+        sprintf();
     } | 
-    translation_unit external_declaration {
-
+    trans_unit extern_decl {
+        sprintf();
     }
     ;
 
-external_declaration: 
-    declaration{
-
+extern_decl: 
+    decl{
+        sprintf();
     }
     ;
 
-declaration:
-    declaration_spec SEMICOLON {
+decl:
+    decl_spec SEMICOLON {
         sprintf();
     } |
-    declaration_spec init_declaration_list SEMICOLON {
+    decl_spec init_decl_list SEMICOLON {
         sprintf();
     }
     ;
 
-declaration_spec: 
+decl_spec: 
     type_spec {
-        
+        sprintf();
     } |
-    type_spec declaration_spec {
-
+    type_spec decl_spec {
+        sprintf();
     }
     ;
 
-init_declaration_list: 
-    init_declaration {
-
+init_decl_list: 
+    init_decl {
+        sprintf();
     } |
-    init_declaration_list COMMA init_declaration {
-        
+    init_decl_list COMMA init_decl {
+        sprintf();
+    }
+    ;
+
+init_decl:
+    direct_decl {
+        sprintf();
+    } |
+    direct_decl ASSIGN_EQUAL init {
+        sprintf();
+    }
+    ;
+
+direct_decl:
+    TOKEN_IDENTIFIER {
+        sprintf();
+    }
+    ;
+
+init:
+    assignment_expr {
+        sprintf();
     }
     ;
 
@@ -87,6 +110,16 @@ type_spec:
     DATATYPE_FLOAT |
     DATATYPE_CHAR
     ;
+
+
+
+assignment_expr: ;
+
+conditional_expr:;
+
+unary_expr: ;
+
+
 
 %% 
 
