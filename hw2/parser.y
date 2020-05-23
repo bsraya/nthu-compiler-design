@@ -28,7 +28,29 @@
 /* token types */
 %token <string_val> TOKEN_IDENTIFIER TOKEN_STRING TOKEN_CHARACTER TOKEN_INTEGER TOKEN_DOUBLE TOKEN_SCI_NOT
 
-
+%type <stringval> program
+%type <stringval> trans_unit
+%type <stringval> extern_decl
+%type <stringval> decl
+%type <stringval> decl_spec
+%type <stringval> type_spec
+%type <stringval> init_decl_list
+%type <stringval> init_decl
+%type <stringval> direct_decl
+%type <stringval> init
+%type <stringval> assignment_expr
+%type <stringval> conditional_expr
+%type <stringval> logical_or_expr
+%type <stringval> exclusive_or_expr
+%type <stringval> inclusive_or_expr
+%type <stringval> logical_and_expr
+%type <stringval> unary_expr
+%type <stringval> multiplicative_expr
+%type <stringval> additive_expr
+%type <stringval> shift_expr
+%type <stringval> relational_expr
+%type <stringval> equality_expr
+%type <stringval> and_expr
 
 %start program
 
