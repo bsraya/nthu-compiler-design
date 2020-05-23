@@ -1,1 +1,5 @@
 *.c
+*.h
+old_scanner.l
+*_scanner.l
+*_parser.y
