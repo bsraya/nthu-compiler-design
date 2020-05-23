@@ -36,7 +36,9 @@
 
 program:
     trans_unit {
-        sprintf(tmp, )
+        sprintf(tmp, "( %s )", $1);
+		strcpy($$, tmp);
+		printf("%s\n", $$);
     }
     ;
 
@@ -51,7 +53,8 @@ trans_unit:
 
 extern_decl: 
     decl{
-        sprintf();
+        sprintf(tmp, "%s", $1);
+		strcpy($$, tmp);
     }
     ;
 
@@ -66,11 +69,20 @@ decl:
 
 decl_spec: 
     type_spec {
-        sprintf();
+        sprintf(tmp, "<scalar_decl>%s", $1);
+		strcpy($$, tmp);
     } |
     type_spec decl_spec {
         sprintf();
     }
+    ;
+
+type_spec:
+    DATATYPE_CHAR |
+    DATATYPE_DOUBLE |
+    DATATYPE_INT |
+    DATATYPE_FLOAT |
+    DATATYPE_CHAR
     ;
 
 init_decl_list: 
@@ -103,16 +115,6 @@ init:
     }
     ;
 
-type_spec:
-    DATATYPE_CHAR |
-    DATATYPE_DOUBLE |
-    DATATYPE_INT |
-    DATATYPE_FLOAT |
-    DATATYPE_CHAR
-    ;
-
-
-
 assignment_expr: 
     conditional_expr {
         sprintf()
@@ -122,10 +124,11 @@ assignment_expr:
     }
     ;
 
-
-
-unary_expr: 
-    postfix_expr {
+conditional_expr:
+    logical_or_expr {
+        sprintf();
+    } |
+    unary_expr {
         sprintf();
     }
     ;
@@ -154,37 +157,71 @@ exclusive_or_expr:
     }
     ;
 
-and_expr: ;
-
-equality_expr: ;
-
-relational_expr: ;
-
-shift_expr: ;
-
-additive_expr: ;
-
-multiplicative_expr: ;
-
-argument_expr_list: ;
-
-postfix_expr: ;
-
-primary_expr: 
-    TOKEN_IDENTIFIER {
-
-    } |
-    constant {
-
-    }
-    ;
-
-conditional_expr:
-    logical_or_expr {
+and_expr: 
+    equality_expr {
         sprintf();
     }
     ;
 
+equality_expr: 
+    relational_expr {
+        sprinf();
+    }
+    ;
+
+relational_expr: 
+    shift_expr {
+        sprintf();
+    }
+    ;
+
+shift_expr: 
+    additive_expr {
+        sprintf();
+    }
+    ;
+
+additive_expr: 
+    multiplicative_expr {
+        sprintf();
+    } |
+    additive_expr PLUS multiplicative_expr {
+        sprintf();
+    }
+    ;
+
+multiplicative_expr: 
+    unary_expr {
+        sprintf();
+    }
+    ;
+
+unary_expr: 
+    postfix_expr {
+        sprintf();
+    }
+    ;
+
+postfix_expr: 
+    primary_expr {
+        sprintf();
+    }
+    ;
+
+
+
+
+
+primary_expr: 
+    TOKEN_IDENTIFIER {
+        sprintf(tmp, "%s", $1);
+        strcpy($$, tmp);
+    } |
+    constant {
+        sprintf(tmp, "%s", $1);
+        strcpy($$, tmp);
+    }
+    ;
 
 constant: 
     TOKEN_INTEGER | 
@@ -194,7 +231,7 @@ constant:
 
 func_def: ;
 
-
+argument_expr_list: ;
 
 %% 
 
