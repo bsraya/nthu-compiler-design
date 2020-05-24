@@ -1,10 +1,4 @@
+test_cases
 *.c
-<<<<<<< Updated upstream
 *.h
-old_scanner.l
-=======
-*.y
-*.h
->>>>>>> Stashed changes
-*_scanner.l
-*_parser.y
+parser
