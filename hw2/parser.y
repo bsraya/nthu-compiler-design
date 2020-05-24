@@ -3,32 +3,25 @@
         #include <string.h>
         #include "y.tab.h"
         int yylex();
-        void yyerror(char* error_message);
-        char tmp[80000];
-        
+        void yyerror(char* error_message);      
 %}
 
 %union {
         char stringval[10000];
 }
 
-// /* operators */
-// %token <stringval> PLUS MINUS MULTIPLE DIVIDE MOD INCREMENT DECREMENT LESS_THAN_EQUAL_THAN LESS_THAN_THAN GREATER_THAN_EQUAL_THAN GREATER_THAN_THAN EQUAL_TO NOT_EQUAL_TO ASSIGN_EQUAL LOGICAL_AND LOGICAL_OR LOGICAL_NOT BITWISE_AND BITWISE_OR BITWISE_XOR BITWISE_COMPLEMENT LEFT_SHIFT RIGHT_SHIFT
-
-// /* punctuations */
-// %token <stringval> GRAVE_ACCENT POUND DOLLAR COLON SEMICOLON COMMA DOT LEFT_SQUARE_BRACKET RIGHT_SQUARE_BRACKET LEFT_BRACKET RIGHT_BRACKET LEFT_CURLY_BRACKET RIGHT_CURLY_BRACKET AT_SIGN
-
-// /* keywords */
-// %token <stringval>   AUTO  STATIC UNION ENUM GOTO REGISTER SIZEOF TYPEDEF VOLATILE EXTERN     
-
-<<<<<<< HEAD
-
 /* primitive datatypes */
 %token <stringval> DATATYPE_INT DATATYPE_DOUBLE DATATYPE_CHAR DATATYPE_FLOAT
-
+/* operators */
 %token <stringval> PLUS MINUS MULTIPLE DIVIDE MOD INCREMENT DECREMENT LESS_THAN LESS_EQUAL_THAN GREATER_THAN GREATER_EQUAL_THAN EQUAL_TO NOT_EQUAL_TO ASSIGN_EQUAL LOGICAL_AND LOGICAL_OR LOGICAL_NOT POINTER BITWISE_AND BITWISE_COMPLEMENT BITWISE_OR BITWISE_XOR LEFT_SHIFT RIGHT_SHIFT
+
+/* punctuations */
 %token <stringval> GRAVE_ACCENT POUND DOLLAR AT_SIGN COLON SEMICOLON COMMA DOT LEFT_SQUARE_BRACKET RIGHT_SQUARE_BRACKET LEFT_BRACKET RIGHT_BRACKET LEFT_CURLY_BRACKET RIGHT_CURLY_BRACKET
+
+/* keywords */
 %token <stringval> VOID FOR WHILE DO IF ELSE SWITCH RETURN BREAK CONTINUE CONST TRUE FALSE STRUCT CASE DEFAULT AUTO STATIC UNION ENUM GOTO REGISTER SIZEOF TYPEDEF VOLATILE EXTERN 
+
+/* tokens */
 %token <stringval> TOKEN_IDENTIFIER TOKEN_STRING TOKEN_CHARACTER TOKEN_INTEGER TOKEN_DOUBLE TOKEN_SCI_NOT
 
 
@@ -102,31 +95,6 @@
 %type <stringval> int_or_char_const
 %type <stringval> iteration_statement
 %type <stringval> jump_statement
-=======
-%type <stringval> program
-%type <stringval> trans_unit
-%type <stringval> extern_decl
-%type <stringval> decl
-%type <stringval> decl_spec
-%type <stringval> type_spec
-%type <stringval> init_decl_list
-%type <stringval> init_decl
-%type <stringval> direct_decl
-%type <stringval> init
-%type <stringval> assignment_expr
-%type <stringval> conditional_expr
-%type <stringval> logical_or_expr
-%type <stringval> exclusive_or_expr
-%type <stringval> inclusive_or_expr
-%type <stringval> logical_and_expr
-%type <stringval> unary_expr
-%type <stringval> multiplicative_expr
-%type <stringval> additive_expr
-%type <stringval> shift_expr
-%type <stringval> relational_expr
-%type <stringval> equality_expr
-%type <stringval> and_expr
->>>>>>> master
 
 %start program
 
