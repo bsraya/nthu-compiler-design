@@ -53,7 +53,7 @@ LIST_OF_KEYWORD             		        ("goto"|"register"|"sizeof"|"typedef"|"vol
 
 %%
 
-[\n]                                        { current_line_number++;                                                    }
+[\n]                                        { current_line_number++;                                                     }
 [ \t\r]+                                    { yylval.stringval = strdup(yytext);                                         }
 
 {SOURCEOFF}                                 { sourceOn = 0; yylval.stringval = strdup(yytext);                           }
@@ -62,7 +62,7 @@ LIST_OF_KEYWORD             		        ("goto"|"register"|"sizeof"|"typedef"|"vol
 {TOKENON}                                   { tokenOn = 1;  yylval.stringval = strdup(yytext);                           }
 
 {ZERO}                                      { yylval.stringval = strdup(yytext); return TOKEN_INTEGER;               }
-{VALID_INTEGER}	                            { yylval.stringval = strdup(yytext); return TOKEN_INTEGER;                }
+{VALID_INTEGER}	                            { yylval.stringval = strdup(yytext); return TOKEN_INTEGER;               }
 {DOUBLE}                                    { yylval.stringval = strdup(yytext); return TOKEN_DOUBLE;                }
 {ZERO_DOUBLE}                               { yylval.stringval = strdup(yytext); return TOKEN_DOUBLE;                }
 {NO_ZERO_DOUBLE}                            { yylval.stringval = strdup(yytext); return TOKEN_DOUBLE;                }
