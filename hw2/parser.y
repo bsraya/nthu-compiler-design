@@ -49,8 +49,23 @@ trans_unit:
 	;
 
 extern_decl:
-	scalar_decl
+	scalar_decl |
+	array_decl
 	;
+
+array_decl:
+	type_spec init_array_list SEMICOLON
+	;
+
+init_array_list:
+
+	;
+
+init_array:
+
+	;
+
+
 
 scalar_decl:
 	type_spec SEMICOLON {
