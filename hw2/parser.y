@@ -30,11 +30,12 @@
 %type <stringval> trans_unit
 %type <stringval> extern_decl
 %type <stringval> scalar_decl
+%type <stringval> decl
 %type <stringval> init_decl_list
+%type <stringval> decl_init
 %type <stringval> init_decl
 %type <stringval> direct_decl
 %type <stringval> type_spec
-
 %type <stringval> array_decl
 %type <stringval> init_array_list
 %type <stringval> n_dimension
@@ -54,75 +55,27 @@ trans_unit:
 	;
 
 extern_decl:
-	func_decl_list func_def_list
+	decl_init
 	;
 
-func_decl_list:
-	func_decl SEMICOLON {
 
-	} |
-	func_decl_list  {
-
-	}
-	;
-
-func_decl:
-	type_spec TOKEN_IDENTIFIER LEFT_BRACKET RIGHT_BRACKET {
-
-	} |
-	type_spec TOKEN_IDENTIFIER LEFT_BRACKET parameters RIGHT_BRACKET {
-
-	}
-	;
-
-parameters:
-	parameter {
-
-	} |
-	parameters COMMA parameter {
-
-	}
-	;
-
-parameter:
-	TOKEN_IDENTIFIER {
-		int len = strlen($1);
-		
-	}
-	;
-
-func_def_list:
-	func_def { 
-
-	} |
-	func_def_list {
-
-	}
-	;
-
-func_def: 
-	type_spec TOKEN_IDENTIFIER LEFT_BRACKET RIGHT_BRACKET statement {
-
-	} |
-	type_spec TOKEN_IDENTIFIER LEFT_BRACKET parameters RIGHT_BRACKET statement {
-
-	}
-	;
-
-statement:
-	jump_statement
+decl_init:
+	decl |
+	decl_init decl
 	;
 
 decl:
 	scalar_decl {
 		printf("<scalar_decl>%s</scalar_decl>", $1);
 		free($1);
-	} | 
+	} |
 	array_decl {
 		printf("<array_decl>%s</array_decl>", $1);
 		free($1);
-	}
+	} 
 	;
+
+
 
 array_decl:
 	type_spec init_array_list SEMICOLON {
@@ -182,8 +135,6 @@ dimension:
 	}
 	;
 
-
-
 scalar_decl:
 	type_spec SEMICOLON {
 		int len1 = strlen($1);
@@ -236,7 +187,7 @@ direct_decl:
 		$$ = $1;
 	}
 	;
-
+	
 type_spec:
 	DATATYPE_CHAR {
 		int len = strlen($1);
