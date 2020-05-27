@@ -54,31 +54,95 @@ trans_unit:
 	;
 
 extern_decl:
-	scalar_decl {
-		printf("<scalar_decl>%s;</scalar_decl>", $1);
-		free($1);
+	func_decl_list func_def_list
+	;
+
+func_decl_list:
+	func_decl SEMICOLON {
+
 	} |
+	func_decl_list  {
+
+	}
+	;
+
+func_decl:
+	type_spec TOKEN_IDENTIFIER LEFT_BRACKET RIGHT_BRACKET {
+
+	} |
+	type_spec TOKEN_IDENTIFIER LEFT_BRACKET parameters RIGHT_BRACKET {
+
+	}
+	;
+
+parameters:
+	parameter {
+
+	} |
+	parameters COMMA parameter {
+
+	}
+	;
+
+parameter:
+	TOKEN_IDENTIFIER {
+		int len = strlen($1);
+		
+	}
+	;
+
+func_def_list:
+	func_def { 
+
+	} |
+	func_def_list {
+
+	}
+	;
+
+func_def: 
+	type_spec TOKEN_IDENTIFIER LEFT_BRACKET RIGHT_BRACKET statement {
+
+	} |
+	type_spec TOKEN_IDENTIFIER LEFT_BRACKET parameters RIGHT_BRACKET statement {
+
+	}
+	;
+
+statement:
+	jump_statement
+	;
+
+decl:
+	scalar_decl {
+		printf("<scalar_decl>%s</scalar_decl>", $1);
+		free($1);
+	} | 
 	array_decl {
-		printf("<array_decl>%s;</array_decl>", $1);
+		printf("<array_decl>%s</array_decl>", $1);
 		free($1);
 	}
 	;
 
 array_decl:
 	type_spec init_array_list SEMICOLON {
-		int len = strlen($1);
-		$$ = (char*)malloc((len)*sizeof(char) + 1);
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc((len1 + len2)*sizeof(char) + 1);
 		$$[0] = '\0';
 		strcat($$, $1);
-		strncat($$, $2, 1);
+		strcat($$, $2);
+		strncat($$, $3, 1);
 	}
 	;
 
 init_array_list:
 	TOKEN_IDENTIFIER n_dimension {
-		int len = strlen($1);
-		$$ = (char*)malloc(len*sizeof(char)) + 1;
-		$$ = $1;
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc((len1+len2)*sizeof(char) + 1);
+		strcat($$, $1);
+		strcat($$, $2);
 	} |
 	init_array_list COMMA TOKEN_IDENTIFIER n_dimension {
 		int len1 = strlen($1);
