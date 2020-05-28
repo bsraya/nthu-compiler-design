@@ -1,0 +1,1 @@
+int function(int a, double b, char c, float d);

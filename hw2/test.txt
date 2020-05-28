@@ -1,0 +1,1 @@
+<scalar_decl>inta=<expr>-<expr>1</expr></expr>;</scalar_decl>

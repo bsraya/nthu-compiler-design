@@ -25,21 +25,28 @@
 /* tokens */
 %token <stringval> TOKEN_IDENTIFIER TOKEN_STRING TOKEN_CHARACTER TOKEN_INTEGER TOKEN_DOUBLE TOKEN_SCI_NOT
 
-
 %type <stringval> program
 %type <stringval> trans_unit
 %type <stringval> extern_decl
 %type <stringval> scalar_decl
 %type <stringval> decl
 %type <stringval> init_decl_list
-%type <stringval> decl_init
 %type <stringval> init_decl
 %type <stringval> direct_decl
 %type <stringval> type_spec
+
 %type <stringval> array_decl
 %type <stringval> init_array_list
 %type <stringval> n_dimension
 %type <stringval> dimension
+
+%type <stringval> const_decl
+
+%type <stringval> func_decl
+%type <stringval> parameters
+%type <stringval> parameter
+
+%type <stringval> func_def
 
 %start program
 
@@ -55,13 +62,14 @@ trans_unit:
 	;
 
 extern_decl:
-	decl_init
+	decl |
+	func_def
 	;
 
+func_def:
+	type_spec TOKEN_IDENTIFIER LEFT_BRACKET parameters RIGHT_BRACKET statement {
 
-decl_init:
-	decl |
-	decl_init decl
+	}
 	;
 
 decl:
@@ -72,10 +80,75 @@ decl:
 	array_decl {
 		printf("<array_decl>%s</array_decl>", $1);
 		free($1);
-	} 
+	} |
+	const_decl {
+		printf("<const_decl>%s</const_decl>", $1);
+		free($1);
+	} |
+	func_decl {
+		printf("<func_decl>%s</func_decl>", $1);
+		free($1);
+	}
 	;
 
+func_decl:
+	type_spec TOKEN_IDENTIFIER LEFT_BRACKET parameters RIGHT_BRACKET SEMICOLON {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		int len4 = strlen($4);
 
+		$$ = (char*)malloc((len1+len2+1+len4+1+1)*sizeof(char)+1);
+		strcat($$, $1);
+		strcat($$, $2);
+		strncat($$, $3, 1);
+		strcat($$, $4);
+		strncat($$, $5, 1);
+		strncat($$, $6, 1);
+	}
+	;
+
+parameters:
+	parameter {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	} |
+	parameters COMMA parameter {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc((len1 + 1 + len3)*sizeof(char) + 1);
+		strcat($$, $1);
+		strncat($$, $2, 1);
+		strcat($$, $3);
+	}
+	;
+
+parameter:
+	type_spec TOKEN_IDENTIFIER {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc((len1+len2)*sizeof(char) + 1);
+		strcat($$, $1);
+		strcat($$, $2);
+	}
+	;
+
+const_decl:
+	CONST scalar_decl {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc((len1+len2)*sizeof(char) + 1);
+		strcat($$, $1);
+		strcat($$, $2);
+	} | 
+	CONST array_decl {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc((len1+len2)*sizeof(char) + 1);
+		strcat($$, $1);
+		strcat($$, $2);
+	}
+	;
 
 array_decl:
 	type_spec init_array_list SEMICOLON {
@@ -177,6 +250,139 @@ init_decl:
 		int len = strlen($1);
 		$$ = (char*)malloc(len*sizeof(char) + 1);
 		$$ = $1;
+	} |
+	direct_decl ASSIGN_EQUAL init {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc((len1+1+len3)*sizeof(char) + 1);
+		strcat($$, $1);
+		strncat($$, $2, 1);
+		strcat($$, $1);
+	}
+	;
+
+init:
+	expr
+	;
+
+expr:
+	assignment_expr
+	;
+
+assignment_expr:
+	conditional_expr {
+
+	} |
+	unary_expr ASSIGN_EQUAL assignment_expr {
+
+	}
+	;
+
+conditional_expr:
+	logical_and_expr {
+		
+	} |
+	logical_or_expr LOGICAL_OR logical_and_expr {
+
+	}
+	;
+
+logical_and_expr:
+	and_expr {
+
+	} |
+	logical_and_expr LOGICAL_AND and_expr {
+
+	}
+	;
+
+or_expr:
+	xor_expr {
+
+	} |
+	or_expr BITWISE_OR xor_expr {
+
+	}
+	;
+
+xor_expr:
+	and_expr {
+
+	} |
+	xor_expr BITWISE_XOR and_expr {
+
+	}
+	;
+
+and_expr:
+	equality_expr |
+	and_expr BITWISE_AND equality_expr
+	;
+
+equality_expr:
+	relational_expr |
+	equality_expr EQUAL_TO relational_expr |
+	equality_expr NOT_EQUAL_TO relational_expr
+	;
+
+relational_expr:
+	additive_expr |
+	relational_expr GREATER_THAN additive_expr |
+	relational_expr GREATER_EQUAL_THAN additive_expr|
+	relational_expr LESS_THAN additive_expr|
+	relational_expr LESS_EQUAL_THAN additive_expr
+	;
+
+additive_expr:
+	mutliplicative_expr |
+	additive_expr PLUS multiplicative_expr |
+	additive_expr MINUS multiplicative_expr
+	;
+
+multiplicative_expr:
+	unary_expr |
+	multiplicative_expr	MULTIPLE unary_expr|
+	multiplicative_expr DIVIDE unary_expr |
+	multiplicative_expr MOD unary_expr
+	;
+
+unary_expr:
+	postfix_expr |
+	INCREMENT unary_expr |
+	DECREMENT unary_expr |
+	unary_operator unary_expr {
+		printf("<expr>%s%s</expr>", $1, $2);
+	}
+	;
+
+unary_operator:
+	BITWISE_AND |
+	BITWISE_COMPLEMENT |
+	PLUS | 
+	MINUS 
+	;
+
+postfix_expr:
+	primary_expr |
+	postfix_expr INCREMENT
+	postfix_expr DECREMENT
+	;
+
+primary_expr:
+	TOKEN_IDENTIFIER |
+	constant |
+	TOKEN_STRING
+	;
+
+constant:
+	TOKEN_INTEGER {
+		printf("<expr>%s</expr>", $1);
+	} |
+	TOKEN_DOUBLE {
+		printf("<expr>%s</expr>", $1);
+	} |
+	TOKEN_SCI_NOT {
+		printf("<expr>%s</expr>", $1);
 	}
 	;
 
@@ -209,6 +415,30 @@ type_spec:
 		$$ = (char *)malloc(len * sizeof(char) + 1);
 		$$ = $1;
 	}
+	;
+
+statements:
+	statement |
+	statements statement
+	;
+
+statement:
+	compound_statement
+	;
+
+declarations:
+	decl |
+	declarations decl
+	;
+
+compound_statement:
+	LEFT_CURLY_BRACKET code_block RIGHT_CURLY_BRACKET {
+
+	}
+	;
+
+code_block:
+	statements declarations
 	;
 
 %% 
