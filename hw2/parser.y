@@ -17,7 +17,7 @@
 %token <stringval> PLUS MINUS MULTIPLE DIVIDE MOD INCREMENT DECREMENT LESS_THAN LESS_EQUAL_THAN GREATER_THAN GREATER_EQUAL_THAN EQUAL_TO NOT_EQUAL_TO ASSIGN_EQUAL LOGICAL_AND LOGICAL_OR LOGICAL_NOT POINTER BITWISE_AND BITWISE_COMPLEMENT BITWISE_OR BITWISE_XOR LEFT_SHIFT RIGHT_SHIFT
 
 /* punctuations */
-%token <stringval> GRAVE_ACCENT POUND DOLLAR AT_SIGN COLON SEMICOLON COMMA DOT LEFT_SQUARE_BRACKET RIGHT_SQUARE_BRACKET LEFT_BRACKET RIGHT_BRACKET LEFT_CURLY_BRACKET RIGHT_CURLY_BRACKET
+%token <stringval> STR_PAR CHAR_PAR GRAVE_ACCENT POUND DOLLAR AT_SIGN COLON SEMICOLON COMMA DOT LEFT_SQUARE_BRACKET RIGHT_SQUARE_BRACKET LEFT_BRACKET RIGHT_BRACKET LEFT_CURLY_BRACKET RIGHT_CURLY_BRACKET
 
 /* keywords */
 %token <stringval> VOID FOR WHILE DO IF ELSE SWITCH RETURN BREAK CONTINUE CONST TRUE FALSE STRUCT CASE DEFAULT AUTO STATIC UNION ENUM GOTO REGISTER SIZEOF TYPEDEF VOLATILE EXTERN 
@@ -46,7 +46,23 @@
 %type <stringval> parameters
 %type <stringval> parameter
 
-%type <stringval> func_def
+%type <stringval> init
+%type <stringval> assignment_expr
+%type <stringval> logical_or_expr
+%type <stringval> logical_and_expr
+%type <stringval> bitwise_or_expr
+%type <stringval> bitwise_xor_expr
+%type <stringval> bitwise_and_expr
+%type <stringval> equality_expr
+%type <stringval> relational_expr
+%type <stringval> additive_expr
+%type <stringval> multiplicative_expr
+%type <stringval> unary_expr
+%type <stringval> postfix_expr
+%type <stringval> primary_expr
+%type <stringval> unary_operator
+%type <stringval> constant
+
 
 %start program
 
@@ -56,20 +72,14 @@ program:
 	trans_unit
 	;
 
+
 trans_unit:
 	extern_decl |
 	trans_unit extern_decl
 	;
 
 extern_decl:
-	decl |
-	func_def
-	;
-
-func_def:
-	type_spec TOKEN_IDENTIFIER LEFT_BRACKET parameters RIGHT_BRACKET statement {
-
-	}
+	decl
 	;
 
 decl:
@@ -257,132 +267,342 @@ init_decl:
 		$$ = (char*)malloc((len1+1+len3)*sizeof(char) + 1);
 		strcat($$, $1);
 		strncat($$, $2, 1);
-		strcat($$, $1);
+		strcat($$, $3);
 	}
 	;
 
 init:
-	expr
-	;
-
-expr:
-	assignment_expr
-	;
-
-assignment_expr:
-	conditional_expr {
-
-	} |
-	unary_expr ASSIGN_EQUAL assignment_expr {
-
+	assignment_expr {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
 	}
 	;
 
-conditional_expr:
+assignment_expr:
+	logical_or_expr {
+		int len = strlen($1);
+		$$ = (char*)malloc((len+15)*sizeof(char) + 1);
+		sprintf($$,"<expr>%s</expr>",$1);
+		$$ = $$;
+	} |
+	unary_expr ASSIGN_EQUAL assignment_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s%s</expr>", $1, $2, $3);
+		$$ = $$;
+	}
+	;
+
+logical_or_expr:
 	logical_and_expr {
-		
+		int len = strlen($1);
+		$$ = (char*)malloc((len+15)*sizeof(char) + 1);
+		sprintf($$,"%s",$1);
+		$$ = $$;
 	} |
 	logical_or_expr LOGICAL_OR logical_and_expr {
-
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s%s</expr>", $1, $2, $3);
+		$$ = $$;
 	}
 	;
 
 logical_and_expr:
-	and_expr {
-
+	bitwise_or_expr {
+		int len = strlen($1);
+		$$ = (char*)malloc((len+15)*sizeof(char) + 1);
+		sprintf($$,"%s",$1);
+		$$ = $$;
 	} |
-	logical_and_expr LOGICAL_AND and_expr {
-
+	logical_and_expr LOGICAL_AND bitwise_or_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s%s</expr>", $1, $2, $3);
+		$$ = $$;
 	}
 	;
 
-or_expr:
-	xor_expr {
-
+bitwise_or_expr:
+	bitwise_xor_expr {
+		int len = strlen($1);
+		$$ = (char*)malloc((len+15)*sizeof(char) + 1);
+		sprintf($$,"%s",$1);
+		$$ = $$;
 	} |
-	or_expr BITWISE_OR xor_expr {
-
+	bitwise_or_expr BITWISE_OR bitwise_xor_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s%s</expr>", $1, $2, $3);
+		$$ = $$;
 	}
 	;
 
-xor_expr:
-	and_expr {
-
+bitwise_xor_expr:
+	bitwise_and_expr {
+		int len = strlen($1);
+		$$ = (char*)malloc((len+15)*sizeof(char) + 1);
+		sprintf($$,"%s",$1);
+		$$ = $$;
 	} |
-	xor_expr BITWISE_XOR and_expr {
-
+	bitwise_xor_expr BITWISE_XOR bitwise_and_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s%s</expr>", $1, $2, $3);
+		$$ = $$;
 	}
 	;
 
-and_expr:
-	equality_expr |
-	and_expr BITWISE_AND equality_expr
+bitwise_and_expr:
+	equality_expr {
+		int len = strlen($1);
+		$$ = (char*)malloc((len+15)*sizeof(char) + 1);
+		sprintf($$,"%s",$1);
+		$$ = $$;
+	} |
+	bitwise_and_expr BITWISE_AND equality_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s%s</expr>", $1, $2, $3);
+		$$ = $$;
+	}
 	;
 
 equality_expr:
-	relational_expr |
-	equality_expr EQUAL_TO relational_expr |
-	equality_expr NOT_EQUAL_TO relational_expr
+	relational_expr {
+		int len = strlen($1);
+		$$ = (char*)malloc((len+15)*sizeof(char) + 1);
+		sprintf($$,"%s",$1);
+		$$ = $$;
+	} |
+	equality_expr EQUAL_TO relational_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s%s</expr>", $1, $2, $3);
+		$$ = $$;
+	} |
+	equality_expr NOT_EQUAL_TO relational_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s%s</expr>", $1, $2, $3);
+		$$ = $$;
+	}
 	;
 
 relational_expr:
-	additive_expr |
-	relational_expr GREATER_THAN additive_expr |
-	relational_expr GREATER_EQUAL_THAN additive_expr|
-	relational_expr LESS_THAN additive_expr|
-	relational_expr LESS_EQUAL_THAN additive_expr
+	additive_expr {
+		int len = strlen($1);
+		$$ = (char*)malloc((len+15)*sizeof(char) + 1);
+		sprintf($$,"%s",$1);
+		$$ = $$;
+	} |
+	relational_expr GREATER_THAN additive_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s%s</expr>", $1, $2, $3);
+		$$ = $$;
+	} |
+	relational_expr GREATER_EQUAL_THAN additive_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s%s</expr>", $1, $2, $3);
+		$$ = $$;
+	} |
+	relational_expr LESS_THAN additive_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s%s</expr>", $1, $2, $3);
+		$$ = $$;
+	} |
+	relational_expr LESS_EQUAL_THAN additive_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "%s%s%s", $1, $2, $3);
+		$$ = $$;
+	}
 	;
 
 additive_expr:
-	mutliplicative_expr |
-	additive_expr PLUS multiplicative_expr |
-	additive_expr MINUS multiplicative_expr
+	multiplicative_expr {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	} |
+	additive_expr PLUS multiplicative_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "%s%s%s", $1, $2, $3);
+		$$ = $$;
+	} |
+	additive_expr MINUS multiplicative_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "%s%s%s", $1, $2, $3);
+		$$ = $$;
+	}
 	;
 
 multiplicative_expr:
-	unary_expr |
-	multiplicative_expr	MULTIPLE unary_expr|
-	multiplicative_expr DIVIDE unary_expr |
-	multiplicative_expr MOD unary_expr
+	unary_expr {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	} |
+	multiplicative_expr	MULTIPLE unary_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "%s%s%s", $1, $2, $3);
+		$$ = $$;
+	} |
+	multiplicative_expr DIVIDE unary_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "%s%s%s", $1, $2, $3);
+		$$ = $$;
+	} |
+	multiplicative_expr MOD unary_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3)+15)*sizeof(char) + 1);
+		sprintf($$, "%s%s%s", $1, $2, $3);
+		$$ = $$;
+	}
 	;
 
 unary_expr:
-	postfix_expr |
-	INCREMENT unary_expr |
-	DECREMENT unary_expr |
+	postfix_expr {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	} |
+	INCREMENT unary_expr {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc(((len1 + len2)+15)*sizeof(char) + 1);
+		sprintf($$, "%s%s", $1, $2);
+		$$ = $$;
+	}  |
+	DECREMENT unary_expr {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc(((len1 + len2)+15)*sizeof(char) + 1);
+		sprintf($$, "%s%s", $1, $2);
+		$$ = $$;
+	}  |
 	unary_operator unary_expr {
-		printf("<expr>%s%s</expr>", $1, $2);
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc(((len1 + len2)+15)*sizeof(char) + 1);
+		sprintf($$, "%s%s", $1, $2);
+		$$ = $$;
 	}
 	;
 
 unary_operator:
-	BITWISE_AND |
-	BITWISE_COMPLEMENT |
-	PLUS | 
-	MINUS 
+	BITWISE_AND {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	} |
+	BITWISE_COMPLEMENT {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	} | 
+	LOGICAL_NOT {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	} |
+	PLUS {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	} | 
+	MINUS {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	}
 	;
 
 postfix_expr:
-	primary_expr |
-	postfix_expr INCREMENT
-	postfix_expr DECREMENT
+	primary_expr {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	} |
+	postfix_expr INCREMENT {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc(((len1 + len2)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s</expr>", $1, $2);
+		$$ = $$;
+	} |
+	postfix_expr DECREMENT {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc(((len1 + len2)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s</expr>", $1, $2);
+		$$ = $$;
+	}
 	;
 
 primary_expr:
-	TOKEN_IDENTIFIER |
-	constant |
-	TOKEN_STRING
+	constant {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	} |
+	TOKEN_IDENTIFIER {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	} |
+	TOKEN_STRING {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	} |
+	TOKEN_CHARACTER {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	}
 	;
 
 constant:
 	TOKEN_INTEGER {
-		printf("<expr>%s</expr>", $1);
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
 	} |
 	TOKEN_DOUBLE {
-		printf("<expr>%s</expr>", $1);
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
 	} |
 	TOKEN_SCI_NOT {
-		printf("<expr>%s</expr>", $1);
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
 	}
 	;
 
@@ -415,30 +635,6 @@ type_spec:
 		$$ = (char *)malloc(len * sizeof(char) + 1);
 		$$ = $1;
 	}
-	;
-
-statements:
-	statement |
-	statements statement
-	;
-
-statement:
-	compound_statement
-	;
-
-declarations:
-	decl |
-	declarations decl
-	;
-
-compound_statement:
-	LEFT_CURLY_BRACKET code_block RIGHT_CURLY_BRACKET {
-
-	}
-	;
-
-code_block:
-	statements declarations
 	;
 
 %% 
