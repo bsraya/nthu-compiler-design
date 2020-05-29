@@ -1,1 +1,0 @@
-<scalar_decl>inta=<expr><expr>b</expr>|<expr>c</expr></expr>;</scalar_decl>
