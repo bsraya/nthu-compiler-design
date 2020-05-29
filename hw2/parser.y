@@ -84,7 +84,11 @@ trans_unit:
 	;
 
 extern_decl:
-	decl
+	decl |
+	func_decl {
+		printf("<func_decl>%s</func_decl>", $1);
+		free($1);
+	}
 	;
 
 decl:
@@ -99,11 +103,7 @@ decl:
 	const_decl {
 		printf("<const_decl>%s</const_decl>", $1);
 		free($1);
-	} |
-	func_decl {
-		printf("<func_decl>%s</func_decl>", $1);
-		free($1);
-	}
+	} 
 	;
 
 func_decl:
