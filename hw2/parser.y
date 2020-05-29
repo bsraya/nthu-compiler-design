@@ -434,28 +434,28 @@ expr:
 		sprintf($$, "<expr>%s%s%s</expr>", $1, $2, $3);
 		$$ = $$;
 	} |
-	expr INCREMENT {
+	primary_expr INCREMENT {
 		int len1 = strlen($1);
 		int len2 = strlen($2);
 		$$ = (char*)malloc(((len1 +len2)+15)*sizeof(char) + 1);
 		sprintf($$, "<expr>%s%s</expr>", $1, $2);
 		$$ = $$;
 	} |
-	expr DECREMENT {
+	primary_expr DECREMENT {
 		int len1 = strlen($1);
 		int len2 = strlen($2);
 		$$ = (char*)malloc(((len1 +len2)+15)*sizeof(char) + 1);
 		sprintf($$, "<expr>%s%s</expr>", $1, $2);
 		$$ = $$;
 	} |
-	INCREMENT expr {
+	INCREMENT primary_expr {
 		int len1 = strlen($1);
 		int len2 = strlen($2);
 		$$ = (char*)malloc(((len1 +len2)+15)*sizeof(char) + 1);
 		sprintf($$, "<expr>%s%s</expr>", $1, $2);
 		$$ = $$;
 	} |
-	DECREMENT expr {
+	DECREMENT primary_expr {
 		int len1 = strlen($1);
 		int len2 = strlen($2);
 		$$ = (char*)malloc(((len1 +len2)+15)*sizeof(char) + 1);
@@ -476,14 +476,14 @@ expr:
 		sprintf($$, "<expr>%s%s</expr>", $1, $2);
 		$$ = $$;
 	} |
-	expr LEFT_BRACKET expr RIGHT_BRACKET {
+	variable LEFT_BRACKET expr RIGHT_BRACKET {
 		int len1 = strlen($1);
 		int len3 = strlen($3);
 		$$ = (char*)malloc(((len1+len3+2)+15)*sizeof(char) + 1);
 		sprintf($$,"<expr>%s(%s)</expr>",$1, $3);
 		$$ = $$;
 	} |
-	expr LEFT_SQUARE_BRACKET expr RIGHT_SQUARE_BRACKET {
+	variable LEFT_SQUARE_BRACKET expr RIGHT_SQUARE_BRACKET {
 		int len1 = strlen($1);
 		int len3 = strlen($3);
 		$$ = (char*)malloc(((len1+len3+2)+15)*sizeof(char) + 1);
