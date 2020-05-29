@@ -62,7 +62,8 @@
 %type <stringval> primary_expr
 %type <stringval> unary_operator
 %type <stringval> constant
-
+%type <stringval> expr
+%type <stringval> argument_list
 
 %start program
 
@@ -169,6 +170,18 @@ array_decl:
 		strcat($$, $1);
 		strcat($$, $2);
 		strncat($$, $3, 1);
+	} |
+	type_spec init_array_list ASSIGN_EQUAL init SEMICOLON {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		int len4 = strlen($4);
+		$$ = (char*)malloc((len1 + len2+1+len4+1)*sizeof(char) + 1);
+		$$[0] = '\0';
+		strcat($$, $1);
+		strcat($$, $2);
+		strncat($$, $3, 1);
+		strcat($$, $4);
+		strncat($$, $5, 1);
 	}
 	;
 
@@ -194,10 +207,10 @@ init_array_list:
 	;
 
 n_dimension:
-	dimension {
+	dimension{
 		int len = strlen($1);
 		$$ = (char*)malloc(len*sizeof(char) + 1);
-		$$ = $1;
+		strcat($$, $1);
 	} |
 	n_dimension dimension {
 		int len1 = strlen($1);
@@ -294,6 +307,7 @@ assignment_expr:
 		$$ = $$;
 	}
 	;
+
 
 logical_or_expr:
 	logical_and_expr {
@@ -496,21 +510,21 @@ unary_expr:
 		int len1 = strlen($1);
 		int len2 = strlen($2);
 		$$ = (char*)malloc(((len1 + len2)+15)*sizeof(char) + 1);
-		sprintf($$, "%s%s", $1, $2);
+		sprintf($$, "<expr>%s%s</expr>", $1, $2);
 		$$ = $$;
 	}  |
 	DECREMENT unary_expr {
 		int len1 = strlen($1);
 		int len2 = strlen($2);
 		$$ = (char*)malloc(((len1 + len2)+15)*sizeof(char) + 1);
-		sprintf($$, "%s%s", $1, $2);
+		sprintf($$, "<expr>%s%s</expr>", $1, $2);
 		$$ = $$;
 	}  |
 	unary_operator unary_expr {
 		int len1 = strlen($1);
 		int len2 = strlen($2);
 		$$ = (char*)malloc(((len1 + len2)+15)*sizeof(char) + 1);
-		sprintf($$, "%s%s", $1, $2);
+		sprintf($$, "<expr>%s%s</expr>", $1, $2);
 		$$ = $$;
 	}
 	;
@@ -562,6 +576,65 @@ postfix_expr:
 		$$ = (char*)malloc(((len1 + len2)+15)*sizeof(char) + 1);
 		sprintf($$, "<expr>%s%s</expr>", $1, $2);
 		$$ = $$;
+	} |
+	postfix_expr DOT TOKEN_IDENTIFIER {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc(((len1 + len2)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s</expr>", $1, $2);
+		$$ = $$;
+	} |
+	postfix_expr LEFT_SQUARE_BRACKET expr RIGHT_SQUARE_BRACKET {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3 + 1)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s[%s]</expr>", $1, $2);
+		$$ = $$;
+	} |
+	postfix_expr LEFT_BRACKET RIGHT_BRACKET {
+		int len = strlen($1);
+		$$ = (char*)malloc((len + 2 + 15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s%s</expr>", $1, $2, $3);
+		$$ = $$;
+	} |
+	postfix_expr LEFT_BRACKET argument_list RIGHT_BRACKET {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc(((len1 + 1 + len3 + 1)+15)*sizeof(char) + 1);
+		sprintf($$, "<expr>%s%s%s%s</expr>", $1, $2, $3, $4);
+		$$ = $$;
+	}
+	;
+
+expr:
+	assignment_expr {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	} |
+	expr COMMA assignment_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc((len1+1+len3)*sizeof(char) + 1);
+		strcat($$,$1);
+		strncat($$, $2, 1);
+		strcat($$, $3);
+	}
+	;
+
+argument_list:
+	assignment_expr {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char) + 1);
+		$$ = $1;
+	} |
+	argument_list COMMA assignment_expr {
+		int len1 = strlen($1);
+		int len3 = strlen($3);
+		$$ = (char*)malloc((len1+1+len3)*sizeof(char) + 1);
+		strcat($$,$1);
+		strncat($$, $2, 1);
+		strcat($$, $3);
 	}
 	;
 
