@@ -4,3 +4,4 @@ y.tab.h
 old_parser.y
 parser
 test_cases
+snippet.y
