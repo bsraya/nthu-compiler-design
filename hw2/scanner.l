@@ -83,7 +83,6 @@ LIST_OF_KEYWORD             		        ("goto"|"register"|"sizeof"|"typedef"|"vol
 "/*"				                        { BEGIN(MULTILINE_COMMENT); yylval.stringval = strdup(yytext);               }
 <MULTILINE_COMMENT>[^*\n]*                  { }
 <MULTILINE_COMMENT>"*"+[^*/\n]*             { }
-<MULTILINE_COMMENT>\n 		                { current_line_number++; }
 <MULTILINE_COMMENT>"*"+"/"	                { BEGIN(INITIAL); strcpy(yylval.stringval,yytext);                          }
 
 "int"                                       { BEGIN(VARIABLE_ASSIGNMENT); yylval.stringval = strdup(yytext); return DATATYPE_INT;          }
@@ -95,7 +94,6 @@ LIST_OF_KEYWORD             		        ("goto"|"register"|"sizeof"|"typedef"|"vol
 <VARIABLE_ASSIGNMENT>{IDENTIFIER}           { BEGIN(INITIAL);             yylval.stringval = strdup(yytext); return TOKEN_IDENTIFIER;      }
 <VARIABLE_ASSIGNMENT>"*"			        {                             yylval.stringval = strdup(yytext); return MULTIPLE;              }
 <VARIABLE_ASSIGNMENT>[ \t\r]+   	        { yylval.stringval = strdup(yytext);                                                           }
-<VARIABLE_ASSIGNMENT>{LIST_OF_KEYWORD}	    { return 0; }
 <VARIABLE_ASSIGNMENT>.			            { return 0; }
 
 "true"                                      { yylval.stringval = strdup(yytext); return TRUE;                 }

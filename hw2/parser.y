@@ -36,6 +36,12 @@
 %type <stringval> type_spec
 
 %type <stringval> func_def
+%type <stringval> stmts
+%type <stringval> stmt
+%type <stringval> decls
+%type <stringval> jump_stmt
+%type <stringval> compound_stmt
+%type <stringval> code_block
 
 %type <stringval> array_decl
 %type <stringval> init_array_list
@@ -86,45 +92,173 @@ trans_unit:
 	;
 
 extern_decl:
-	decl | func_def
+	decl {
+		printf("%s", $1);
+		free($1);	
+	} | 
+	func_def {
+		printf("<func_def>%s</func_def>", $1);
+		free($1);
+	}
 	;
 
 func_def:
-	type_spec TOKEN_IDENTIFIER LEFT_BRACKET RIGHT_BRACKET compound_stmt|
-	type_spec TOKEN_IDENTIFIER LEFT_BRACKET parameters RIGHT_BRACKET compound_stmt
+	type_spec TOKEN_IDENTIFIER LEFT_BRACKET RIGHT_BRACKET stmt {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		int len5 = strlen($5);
+
+		$$ = (char*)malloc((len1+len2+1+1+len5)*sizeof(char)+1);
+		strcat($$, $1);
+		strcat($$, $2);
+		strncat($$, $3, 1);
+		strncat($$, $4, 1);
+		strcat($$, $5);
+	} |
+	type_spec TOKEN_IDENTIFIER LEFT_BRACKET parameters RIGHT_BRACKET stmt{
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		int len4 = strlen($4);
+		int len6 = strlen($6);
+
+		$$ = (char*)malloc((len1+len2+1+len4+1+len6)*sizeof(char)+1);
+		strcat($$, $1);
+		strcat($$, $2);
+		strncat($$, $3, 1);
+		strcat($$, $4);
+		strncat($$, $5, 1);
+		strcat($$, $6);
+	}
 	;
+
+stmts:
+	stmt  {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char)+1);
+		strcat($$, $1);
+	}| 
+	stmts stmt {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc((len1+len2)*sizeof(char)+1);
+		strcat($$, $1);
+		strcat($$, $2);
+	};
 
 stmt:
-	compound_stmt
-	;
+	compound_stmt {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char)+1);
+		strcat($$, $1);
+	} |
+	jump_stmt {
+		int len = strlen($1);
+		$$ = (char*)malloc((len+15)*sizeof(char) + 1);
+		sprintf($$, "<stmt>%s</stmt>", $1);
+		$$ = $$;
+	};
 
+jump_stmt:
+	CONTINUE SEMICOLON {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc((len1+len2)*sizeof(char)+1);
+		strcat($$, $1);
+		strcat($$, $2);
+	}|
+	BREAK SEMICOLON {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc((len1+len2)*sizeof(char)+1);
+		strcat($$, $1);
+		strcat($$, $2);
+	} |
+	RETURN SEMICOLON { 
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc((len1+len2)*sizeof(char)+1);
+		strcat($$, $1);
+		strcat($$, $2);
+	} |
+	RETURN expr SEMICOLON {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc((len1+len2+1)*sizeof(char)+1);
+		strcat($$, $1);
+		strcat($$, $2);
+		strncat($$, $3, 1);
+	}
+	;
 
 compound_stmt:
-	LEFT_CURLY_BRACKET RIGHT_CURLY_BRACKET |
-	LEFT_CURLY_BRACKET declarations RIGHT_CURLY_BRACKET |
-	LEFT_CURLY_BRACKET statements RIGHT_CURLY_BRACKET |
-	LEFT_CURLY_BRACKET declarations statements RIGHT_CURLY_BRACKET
+	LEFT_CURLY_BRACKET code_block RIGHT_CURLY_BRACKET {
+		int len2 = strlen($2);
+		$$ = (char*)malloc((1+len2+1)*sizeof(char)+1);
+		strncat($$, $1, 1);
+		strcat($$, $2);
+		strncat($$, $3, 1);
+	}
 	;
 
-declarations:
-	decl | declarations decl;
+code_block:
+	decls {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char)+1);
+		strcat($$, $1);
+	} |
+	stmts {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char)+1);
+		strcat($$, $1);
+	}|
+	decls stmts{
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc((len1+len2)*sizeof(char)+1);
+		strcat($$, $1);
+		strcat($$, $2);
+	}
+	;
+
+decls:
+	decl {
+		int len = strlen($1);
+		$$ = (char*)malloc(len*sizeof(char)+1);
+		strcat($$, $1);
+	} |
+	decls decl {
+		int len1 = strlen($1);
+		int len2 = strlen($2);
+		$$ = (char*)malloc((len1+len2)*sizeof(char)+1);
+		strcat($$, $1);
+		strcat($$, $2);
+	}
+	;
 
 decl:
 	scalar_decl {
-		printf("<scalar_decl>%s</scalar_decl>", $1);
-		free($1);
+		int len = strlen($1);
+		$$ = (char*)malloc((len+30)*sizeof(char) + 1);
+		sprintf($$, "<scalar_decl>%s</scalar_decl>", $1);
+		$$ = $$;
 	} |
 	array_decl {
-		printf("<array_decl>%s</array_decl>", $1);
-		free($1);
+		int len = strlen($1);
+		$$ = (char*)malloc((len+30)*sizeof(char) + 1);
+		sprintf($$, "<array_decl>%s</array_decl>", $1);
+		$$ = $$;
 	} |
 	const_decl {
-		printf("<const_decl>%s</const_decl>", $1);
-		free($1);
+		int len = strlen($1);
+		$$ = (char*)malloc((len+30)*sizeof(char) + 1);
+		sprintf($$, "<const_decl>%s</const_decl>", $1);
+		$$ = $$;
 	} |
 	func_decl {
-		printf("<func_decl>%s</func_decl>", $1);
-		free($1);
+		int len = strlen($1);
+		$$ = (char*)malloc((len+30)*sizeof(char) + 1);
+		sprintf($$, "<func_decl>%s</func_decl>", $1);
+		$$ = $$;
 	}
 	;
 
