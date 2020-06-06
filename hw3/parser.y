@@ -35,8 +35,6 @@
 %type <stringval> direct_decl
 %type <stringval> type_spec
 
-%type <stringval> func_def
-
 %type <stringval> array_decl
 %type <stringval> init_array_list
 %type <stringval> n_dimension
@@ -86,28 +84,8 @@ trans_unit:
 	;
 
 extern_decl:
-	decl | func_def
+	decl 
 	;
-
-func_def:
-	type_spec TOKEN_IDENTIFIER LEFT_BRACKET RIGHT_BRACKET compound_stmt|
-	type_spec TOKEN_IDENTIFIER LEFT_BRACKET parameters RIGHT_BRACKET compound_stmt
-	;
-
-stmt:
-	compound_stmt
-	;
-
-
-compound_stmt:
-	LEFT_CURLY_BRACKET RIGHT_CURLY_BRACKET |
-	LEFT_CURLY_BRACKET declarations RIGHT_CURLY_BRACKET |
-	LEFT_CURLY_BRACKET statements RIGHT_CURLY_BRACKET |
-	LEFT_CURLY_BRACKET declarations statements RIGHT_CURLY_BRACKET
-	;
-
-declarations:
-	decl | declarations decl;
 
 decl:
 	scalar_decl {
