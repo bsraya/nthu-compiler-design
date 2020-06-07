@@ -1,175 +1,163 @@
 %{
-    #include <string.h>
-    #include <stdio.h>
-    #include "y.tab.h"
-    
-    void yyerror(const char *msg);
+#include "y.tab.h"
+#include "def.h"
+#include <math.h>
+#include <string.h>
+#include <stdlib.h>
+#include <malloc.h>
+FILE* f_asm;
 
-    int sourceOn = 1;
-    int tokenOn = 1;
-    int current_line_number = 1;
-    char current_line_content[256]; 
-    
-    void yyerror(const char *msg) {
-        fprintf(stderr, "Error at line %d: %s\n", current_line_number, yylval.stringval);
-        exit(-1);
-    }   
+int id_or_keyword(char *text);
+int check_id_exist(char *text);
+int yywrap();
+int install_sym(char *text, unsigned int type);
+int yyparse();
 %}
 
-/* definitions */
-%x VARIABLE_ASSIGNMENT
-%s MULTILINE_COMMENT
-SOURCEOFF		                            (\#pragma[[:space:]]source[[:space:]]off)
-SOURCEON		                            (\#pragma[[:space:]]source[[:space:]]on)
-TOKENOFF		                            (\#pragma[[:space:]]token[[:space:]]off)
-TOKENON	                                    (\#pragma[[:space:]]token[[:space:]]on)
-
-CHARACTER		                            (\'[^\'\n]\')
-CHARACTER_SPACES                            (\'\\(b|0|n|t|r|f|v)\')
-MULTI_CHARACTER		                        (\'[^\'\n]+\')
-UNINFLECTED_TERM_CHAR		                (\'[^\'\n]*)
-
-COMMENT	                                    ("//"[^\n]*)
-IDENTIFIER		                            ([_a-zA-Z][_a-zA-Z0-9]*)
-
-STRING 			                            (\"[^\"\n]*\")
-UNINFLECTED_TERM_STRING                     (\"[^\"\n]*)
-
-BACKSLASHES                                 (\\*)
-
-ZERO                                        (0)
-VALID_INTEGER                               ([1-9]+[0-9]*)
-INVALID_INTEGER                             (0[0-9]+)
-
-DOUBLE 			                            ([1-9]+[0-9]*"."[0-9]+)
-ZERO_DOUBLE		                            (0.[0-9]+)
-NO_ZERO_DOUBLE                              (\.[0-9]+)
-INVALID_DOUBLE                              ([0-9]+".") 
-
-VALID_SCIENTIFIC_NOTATION                   ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+)
-INVALID_SCIENTIFIC_NOTATION                 ([0-9]+["."[0-9]*]?[eE][+-]?[0-9]+"."[0-9]*)
-
-LIST_OF_KEYWORD             		        ("goto"|"register"|"sizeof"|"typedef"|"volatile"|"extern"|"static"|"union"|"enum"|"auto"|"double"|"int"|"char"|"bool"|"void"|"null"|"for"|"while"|"do"|"if"|"else"|"switch"|"return"|"break"|"continue"|"const"|"true"|"false"|"struct"|"case"|"default"|"printf"|"scanf"|"getc"|"gets"|"getchar"|"puts"|"putchar"|"clearerr"|"fopen"|"fclose"|"getw"|"putw"|"fgetc"|"putc"|"fputc"|"fgets"|"fputs"|"feof"|"fseek"|"ftell"|"rewind"|"sprintf"|"sscanf"|"remove"|"fflush"|"ferror"|"fgetpos"|"fread"|"freopen"|"fsetpos"|"fwrite"|"rename"|"setbuf"|"setvbuf"|"tmpfile"|"tmpnam"|"fprintf"|"vfprintf"|"vprintf"|"vsprintf"|"fscanf"|"ungetc"|"perror")
+digit		[0-9]
+fraction	[.]{digit}*
+sign		[+|-]
+integer		{sign}?{digit}+
+exp		    [E|e]{sign}?{integer}
+float_num   {integer}{fraction}
+exp_num  	[{integer}|{float_num}]{exp}
+id		    [a-zA-Z][a-zA-Z0-9_]*
+blank		[ \t]+
 
 %%
 
-[\n]                                        { current_line_number++;                                                     }
-[ \t\r]+                                    { yylval.stringval = strdup(yytext);                                         }
+{blank}			; /* do nothing */
+"\n"			{ lineno++;	}
+"("			    { printf("An lp: %s\n", yytext);            return('(');                  }
+")"			    { printf("An rp: %s\n", yytext);            return(')');                  }
+"{"			    { printf("An lc: %s\n", yytext);            return('{');                  }
+"}" 			{ printf("An rc: %s\n", yytext);            return('}');                  }
+"["			    { printf("An lb: %s\n", yytext);            return('[');                  }
+"]"			    { printf("An lb: %s\n", yytext);            return(']');                  }
+"->"			{ printf("A strcut op: %s\n", yytext);      return(POINTSAT);             }  
+"."			    { printf("A strcut op: %s\n", yytext);      return('+');                  }  
+"++"			{ printf("An inc op: %s\n", yytext);        return(PLUSPLUS);             } 
+"--"			{ printf("An inc op: %s\n", yytext);        return(MINUSMINUS);           } 
+"*"			    { printf("A star: %s\n", yytext);           return('*');                  } 
+"+"			    { printf("A plus: %s\n", yytext);           return('+');                  } 
+"-"			    { printf("A minus: %s\n", yytext);          return('-');                  }
+[<|>]=?			{ printf("A relation op: %s\n", yytext);    return(ARITHCOMPARE);         }
+"="			    { printf("A equal: %s\n", yytext);	        return('=');                  }  
+","			    { printf("A comma: %s\n", yytext);	        return(',');                  }  
+";"			    { printf("A semi-colon: %s\n", yytext);	    return(';');                  }  
 
-{SOURCEOFF}                                 { sourceOn = 0; yylval.stringval = strdup(yytext);                           }
-{SOURCEON}                                  { sourceOn = 1; yylval.stringval = strdup(yytext);                           }          
-{TOKENOFF}                                  { tokenOn = 0;  yylval.stringval = strdup(yytext);                           }
-{TOKENON}                                   { tokenOn = 1;  yylval.stringval = strdup(yytext);                           }
+{id} {
+    int value;
+    switch(id_or_keyword(yytext)) {
+        case IDENTIFIER:
+            if (!check_id_exist(yytext)) install_sym(yytext, IDENTIFIER);
+            printf("An id: %s\n", yytext);
+            value = IDENTIFIER;	
+            break;
+        default:
+            install_sym(yytext, id_or_keyword(yytext));
+            printf("A keyword: %s\n", yytext);
+            value = id_or_keyword(yytext);
+            break;
+    }
+    return(value);
+}
 
-{ZERO}                                      { yylval.stringval = strdup(yytext); return TOKEN_INTEGER;               }
-{VALID_INTEGER}	                            { yylval.stringval = strdup(yytext); return TOKEN_INTEGER;               }
-{DOUBLE}                                    { yylval.stringval = strdup(yytext); return TOKEN_DOUBLE;                }
-{ZERO_DOUBLE}                               { yylval.stringval = strdup(yytext); return TOKEN_DOUBLE;                }
-{NO_ZERO_DOUBLE}                            { yylval.stringval = strdup(yytext); return TOKEN_DOUBLE;                }
-{VALID_SCIENTIFIC_NOTATION}                 { yylval.stringval = strdup(yytext); return TOKEN_SCI_NOT;               }
-{CHARACTER}                                 { yylval.stringval = strdup(yytext); return TOKEN_CHARACTER;             }
-{CHARACTER_SPACES}                          { yylval.stringval = strdup(yytext); return TOKEN_CHARACTER;             }
-{STRING}                                    { yylval.stringval = strdup(yytext); return TOKEN_STRING;                }
+{integer} {
+    install_sym(yytext, INTEGER);
+    printf("An integer: %s\n", yytext);
+    return(CONSTANT);
+}
 
-{BACKSLASHES}                               { return 0; }
-{INVALID_INTEGER}                           { return 0; }
-{INVALID_DOUBLE}                            { return 0; }
-{INVALID_SCIENTIFIC_NOTATION}               { return 0; }
-{MULTI_CHARACTER}                           { return 0; }
-{UNINFLECTED_TERM_CHAR}                     { return 0; }
-{UNINFLECTED_TERM_STRING}                   { return 0; }
+{float_num} {
+    install_sym(yytext, FLOAT);
+    printf("A float num: %s\n", yytext);
+    return(CONSTANT);
+}
 
-{COMMENT}                                   { yylval.stringval = strdup(yytext);                                         }
-"/*"				                        { BEGIN(MULTILINE_COMMENT); yylval.stringval = strdup(yytext);               }
-<MULTILINE_COMMENT>[^*\n]*                  { }
-<MULTILINE_COMMENT>"*"+[^*/\n]*             { }
-<MULTILINE_COMMENT>\n 		                { current_line_number++; }
-<MULTILINE_COMMENT>"*"+"/"	                { BEGIN(INITIAL); strcpy(yylval.stringval,yytext);                          }
-
-"int"                                       { BEGIN(VARIABLE_ASSIGNMENT); yylval.stringval = strdup(yytext); return DATATYPE_INT;          }
-"double"                                    { BEGIN(VARIABLE_ASSIGNMENT); yylval.stringval = strdup(yytext); return DATATYPE_DOUBLE;       }
-"char"                                      { BEGIN(VARIABLE_ASSIGNMENT); yylval.stringval = strdup(yytext); return DATATYPE_CHAR;         }
-"float"                                     { BEGIN(VARIABLE_ASSIGNMENT); yylval.stringval = strdup(yytext); return DATATYPE_FLOAT;        }
-<VARIABLE_ASSIGNMENT>"="			        { BEGIN(INITIAL);             yylval.stringval = strdup(yytext); return ASSIGN_EQUAL;          }
-<VARIABLE_ASSIGNMENT>";"			        { BEGIN(INITIAL);             yylval.stringval = strdup(yytext); return SEMICOLON;             }
-<VARIABLE_ASSIGNMENT>{IDENTIFIER}           { BEGIN(INITIAL);             yylval.stringval = strdup(yytext); return TOKEN_IDENTIFIER;      }
-<VARIABLE_ASSIGNMENT>"*"			        {                             yylval.stringval = strdup(yytext); return MULTIPLE;              }
-<VARIABLE_ASSIGNMENT>[ \t\r]+   	        { yylval.stringval = strdup(yytext);                                                           }
-<VARIABLE_ASSIGNMENT>{LIST_OF_KEYWORD}	    { return 0; }
-<VARIABLE_ASSIGNMENT>.			            { return 0; }
-
-"true"                                      { yylval.stringval = strdup(yytext); return TRUE;                 }
-"false"                                     { yylval.stringval = strdup(yytext); return FALSE;                }
-"void"                                      { yylval.stringval = strdup(yytext); return VOID;                 }
-"for"                                       { yylval.stringval = strdup(yytext); return FOR;                  }
-"do"                                        { yylval.stringval = strdup(yytext); return DO;                   }
-"while"                                     { yylval.stringval = strdup(yytext); return WHILE;                }
-"break"                                     { yylval.stringval = strdup(yytext); return BREAK;                }
-"continue"                                  { yylval.stringval = strdup(yytext); return CONTINUE;             }
-"if"                                        { yylval.stringval = strdup(yytext); return IF;                   }
-"else"                                      { yylval.stringval = strdup(yytext); return ELSE;                 }
-"auto"                                      { yylval.stringval = strdup(yytext); return AUTO;                 }            
-"const"                                     { yylval.stringval = strdup(yytext); return CONST;                }
-"static"                                    { yylval.stringval = strdup(yytext); return STATIC;               }
-"union"                                     { yylval.stringval = strdup(yytext); return UNION;                }
-"enum"                                      { yylval.stringval = strdup(yytext); return ENUM;                 }
-"goto"                                      { yylval.stringval = strdup(yytext); return GOTO;                 }
-"register"                                  { yylval.stringval = strdup(yytext); return REGISTER;             }
-"sizeof"                                    { yylval.stringval = strdup(yytext); return SIZEOF;               }
-"typedef"                                   { yylval.stringval = strdup(yytext); return TYPEDEF;              }
-"volatile"                                  { yylval.stringval = strdup(yytext); return VOLATILE;             }
-"extern"                                    { yylval.stringval = strdup(yytext); return EXTERN;               }
-"return"                                    { yylval.stringval = strdup(yytext); return RETURN;               }
-"struct"                                    { yylval.stringval = strdup(yytext); return STRUCT;               }
-"switch"                                    { yylval.stringval = strdup(yytext); return SWITCH;               }
-"case"                                      { yylval.stringval = strdup(yytext); return CASE;                 }
-"default"                                   { yylval.stringval = strdup(yytext); return DEFAULT;              }
-
-"+"                                         { yylval.stringval = strdup(yytext); return PLUS;                 }
-"-"                                         { yylval.stringval = strdup(yytext); return MINUS;                }
-"*"                                         { yylval.stringval = strdup(yytext); return MULTIPLE;             }
-"/"                                         { yylval.stringval = strdup(yytext); return DIVIDE;               }
-"%"                                         { yylval.stringval = strdup(yytext); return MOD;                  }
-"++"                                        { yylval.stringval = strdup(yytext); return INCREMENT;            }
-"--"                                        { yylval.stringval = strdup(yytext); return DECREMENT;            }    
-"<"                                         { yylval.stringval = strdup(yytext); return LESS_THAN;                 }
-"<="                                        { yylval.stringval = strdup(yytext); return LESS_EQUAL_THAN;            }
-">"                                         { yylval.stringval = strdup(yytext); return GREATER_THAN;              }
-">="                                        { yylval.stringval = strdup(yytext); return GREATER_EQUAL_THAN;         }
-"=="                                        { yylval.stringval = strdup(yytext); return EQUAL_TO;             }
-"!="                                        { yylval.stringval = strdup(yytext); return NOT_EQUAL_TO;         }
-"="                                         { yylval.stringval = strdup(yytext); return ASSIGN_EQUAL;         }
-"&&"                                        { yylval.stringval = strdup(yytext); return LOGICAL_AND;          }
-"||"                                        { yylval.stringval = strdup(yytext); return LOGICAL_OR;           }
-"!"                                         { yylval.stringval = strdup(yytext); return LOGICAL_NOT;          }
-"&"                                         { yylval.stringval = strdup(yytext); return BITWISE_AND;          }
-"|"                                         { yylval.stringval = strdup(yytext); return BITWISE_OR;           }
-"^"                                         { yylval.stringval = strdup(yytext); return BITWISE_XOR;          }
-"~"                                         { yylval.stringval = strdup(yytext); return BITWISE_COMPLEMENT;   }
-"<<"                                        { yylval.stringval = strdup(yytext); return LEFT_SHIFT;           }
-">>"                                        { yylval.stringval = strdup(yytext); return RIGHT_SHIFT;          }
-
-"`"                                         { yylval.stringval = strdup(yytext); return GRAVE_ACCENT;         }
-"#"                                         { yylval.stringval = strdup(yytext); return POUND;                }
-"$"                                         { yylval.stringval = strdup(yytext); return DOLLAR;               }
-":"			                                { yylval.stringval = strdup(yytext); return COLON;                }
-";"				                            { yylval.stringval = strdup(yytext); return SEMICOLON;            }
-","				                            { yylval.stringval = strdup(yytext); return COMMA;                }
-"."				                            { yylval.stringval = strdup(yytext); return DOT;                  }
-"["				                            { yylval.stringval = strdup(yytext); return LEFT_SQUARE_BRACKET;  }
-"]"				                            { yylval.stringval = strdup(yytext); return RIGHT_SQUARE_BRACKET; }
-"("				                            { yylval.stringval = strdup(yytext); return LEFT_BRACKET;         }
-")"				                            { yylval.stringval = strdup(yytext); return RIGHT_BRACKET;        }
-"{"				                            { yylval.stringval = strdup(yytext); return LEFT_CURLY_BRACKET;   }
-"}"				                            { yylval.stringval = strdup(yytext); return RIGHT_CURLY_BRACKET;  }
-"@"                                         { yylval.stringval = strdup(yytext); return AT_SIGN;              }
-
-
-{IDENTIFIER}                                { yylval.stringval = strdup(yytext); return TOKEN_IDENTIFIER;     }
-.                                           { return 0; }
+"#"			{ while (input()!='\n'); }
+\"			{ while (input()!='"'); }
+.			{ printf("Error...: %s, %d\n", yytext, lineno); }
 
 %%
+
+int id_or_keyword(char *text) {
+    int i;
+    
+    for (i=0; i<(sizeof(k_tab)/sizeof(KWORD)); i++) {
+        if (!strcmp(text, k_tab[i].name)) return k_tab[i].value;
+    }
+
+    return IDENTIFIER;
+}
+
+int check_id_exist(char *text) {
+    int i;
+    
+    for (i=0; i<sym_tbl_index && sym_tbl[i].lexptr!=NULL; i++) {
+        if (!strcmp(text, sym_tbl[i].lexptr)) return TRUE;
+    }
+    
+    return FALSE;
+}
 
 int yywrap() {
-    return 1;
-} 
+    int i;
+    printf("Total Lines: %d\n\n", lineno);
+    printf("YYTEXT\t\tVALUE\n");
+    printf("---------------------\n");
+    for(i=0; i<sym_tbl_index; i++) {
+        printf("%s\t\t", sym_tbl[i].lexptr);
+        switch(sym_tbl[i].token) {
+        case IDENTIFIER:
+            printf("%s \n", sym_tbl[i].attrib.sval);
+            break;
+        case INTEGER:
+            printf("%d \n", sym_tbl[i].attrib.ival);
+            break;
+        case FLOAT:
+            printf("%f \n", sym_tbl[i].attrib.fval);
+            break;
+        default:
+            printf("%s \n", sym_tbl[i].attrib.sval);
+            break;
+        }
+    }
+    return TRUE;
+}
+
+int install_sym(char *text, unsigned int type) {
+    sym_tbl[sym_tbl_index].lexptr=(char*)malloc(sizeof(char*)); 
+    strcpy(sym_tbl[sym_tbl_index].lexptr, text);
+    sym_tbl[sym_tbl_index].token=type;
+    switch(type) {
+        case IDENTIFIER:
+            sym_tbl[sym_tbl_index].attrib.sval=(char*)malloc(sizeof(char*));     
+            strcpy(sym_tbl[sym_tbl_index].attrib.sval, text);
+            break;
+        case INTEGER:
+            sym_tbl[sym_tbl_index].attrib.ival=atoi(text);
+            break;
+        case FLOAT:
+            sym_tbl[sym_tbl_index].attrib.fval=atof(text);
+            break;
+        default:
+            sym_tbl[sym_tbl_index].attrib.sval=(char*)malloc(sizeof(char*));  
+            strcpy(sym_tbl[sym_tbl_index].attrib.sval, text);
+            break;
+    }
+    sym_tbl_index++;
+    return TRUE;
+}
+
+void main(int argc, char **argv){
+    int i;
+    --argc; ++argv;
+    lineno=0;
+    
+    if (argc>0) yyin=fopen(argv[0], "r");
+    else yyin=stdin;
+    
+    if (i = yyparse()) fprintf(stderr,"Bad parse, return code %d\n", i);
+    else fprintf(stdout,"\nParsing Successfully\n");
+}
