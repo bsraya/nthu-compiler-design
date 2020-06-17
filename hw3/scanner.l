@@ -1,6 +1,7 @@
 %{
 #include "y.tab.h"
 #include "def.h"
+#include "code.h"
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
@@ -158,6 +159,8 @@ void main(int argc, char **argv){
     if (argc>0) yyin=fopen(argv[0], "r");
     else yyin=stdin;
     
+    init_symbol_table();
+
     if (i = yyparse()) fprintf(stderr,"Bad parse, return code %d\n", i);
     else fprintf(stdout,"\nParsing Successfully\n");
 }

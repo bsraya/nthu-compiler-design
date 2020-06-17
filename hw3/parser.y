@@ -53,7 +53,7 @@ int TRACEON = 100;
 %token SIZEOF  IF ELSE WHILE DO FOR SWITCH CASE DEFAULT_TOKEN
 %token BREAK CONTINUE RETURN GOTO ASM
 
-%type <ident> notype_declarator IDENTIFIER primary expr_no_commas parm
+%type <ident> notype_declarator IDENTIFIER primary expr_no_commas parm decl
 
 %type <token> CONSTANT
 
@@ -82,17 +82,21 @@ int TRACEON = 100;
 
 %%
 
-program: /* empty */
-          { if (TRACEON) printf("1\n ");}
-	| extdefs
-          { if (TRACEON) printf("2\n ");}
+program: /* empty */ { 
+		if (TRACEON) printf("1\n ");
+	}
+	| extdefs { 
+		if (TRACEON) printf("2\n ");
+	}
 	;
 
 extdefs:
-          extdef
-          { if (TRACEON) printf("3\n ");}
-	| extdefs  extdef
-          { if (TRACEON) printf("4\n ");}
+    extdef { 
+		if (TRACEON) printf("3\n ");
+	}
+	| extdefs  extdef { 
+		if (TRACEON) printf("4\n ");
+	}
 	;
 
 extdef:
@@ -106,7 +110,8 @@ extdef:
 		set_scope_and_offset_of_param($1);
 		code_gen_func_header($1);
 	}
-    '{' xdecls { 
+    '{' 
+	xdecls { 
 		if (TRACEON) printf("10.5 ");
         set_local_vars($1);
     }
@@ -115,7 +120,8 @@ extdef:
         pop_up_symbol(cur_scope);
         cur_scope--;
         code_gen_at_end_of_function_body($1);
-    } '}' | 
+    } 
+	'}' | 
 	error ';' { 
 		if (TRACEON) printf("8 "); 
 	} | 
@@ -210,7 +216,8 @@ primary:
 				break;
 			
 			case LOCAL_MODE:
-				fprintf(f_asm,"        lw  t0, %d(fp) \n",table[index].offset*4*(-1)-16);
+				fprintf(f_asm,"        lw  t0, %d(fp) \n",
+					table[index].offset*4*(-1)-16);
 				fprintf(f_asm,"        addi sp, sp, -4\n");
 				fprintf(f_asm,"        sw t0, 0(sp)\n");
 				break;
@@ -270,6 +277,7 @@ parms:
 parm:
 	TYPESPEC notype_declarator { 
 		if (TRACEON) printf("30 "); 
+		$$ = install_symbol($2);
 	}
    	;
 
@@ -303,16 +311,27 @@ xdecls:
 	;
 
 decls:
-	decl
-           { if (TRACEON) printf("104 ") ;
-           }
-	| decls decl
-           { if (TRACEON) printf("106 ") ;
-           }
+	decl { 
+		if (TRACEON) printf("104 ") ;
+    }
+	| decls decl { 
+		if (TRACEON) printf("106 ") ;
+	}
 	;
 
-decl:	 TYPESPEC notype_declarator ';'
-            { if (TRACEON) printf("110 ") ;}
+decl:
+	TYPESPEC IDENTIFIER '=' primary {
+		$$ = install_symbol($2);
+		if (TRACEON) printf("108 ") ;
+	} |
+	decl ',' IDENTIFIER '=' primary {
+		$$ = install_symbol($3);
+		if (TRACEON) printf("109 ") ;
+	} |
+	TYPESPEC notype_declarator ';' { 
+		$$ = install_symbol($2);
+		if (TRACEON) printf("110 ") ;
+	}
 
 %%
 
