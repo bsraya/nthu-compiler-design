@@ -53,7 +53,8 @@ int TRACEON = 100;
 %token SIZEOF  IF ELSE WHILE DO FOR SWITCH CASE DEFAULT_TOKEN
 %token BREAK CONTINUE RETURN GOTO ASM
 
-%type <ident> notype_declarator IDENTIFIER primary expr_no_commas parm decl
+%type <ident> notype_declarator IDENTIFIER primary expr_no_commas parm
+%type <ident> decl
 
 %type <token> CONSTANT
 
@@ -127,7 +128,8 @@ extdef:
 	} | 
 	';' { 
 		if (TRACEON) printf("9 "); 
-	}
+	} |
+	TYPESPEC notype_declarator '{' xdecls stmts '}'
 	;
 
 /* Must appear precede expr for resolve precedence problem */
@@ -205,7 +207,7 @@ primary:
     IDENTIFIER {    	  
 		int index;
 		if (TRACEON) printf("20 ") ;
-    	index =look_up_symbol($1);
+    	index = look_up_symbol($1);
 		
 		switch(table[index].mode) {
 			case ARGUMENT_MODE:
@@ -214,7 +216,6 @@ primary:
 				fprintf(f_asm,"        addi sp, sp, -4\n");
 				fprintf(f_asm,"        sw t0, 0(sp)\n");
 				break;
-			
 			case LOCAL_MODE:
 				fprintf(f_asm,"        lw  t0, %d(fp) \n",
 					table[index].offset*4*(-1)-16);
@@ -247,7 +248,6 @@ primary:
 notype_declarator:
 	notype_declarator '(' parmlist ')'  %prec '.' {   
 		if (TRACEON) printf("24 ");
-		$$=$1;
     } | 
 	IDENTIFIER {   
 		if (TRACEON) printf("25 ") ;
@@ -287,10 +287,12 @@ parm:
    is actually regarded as an invalid decl and part of the decls.  */
 
 stmts:
-	stmt
-               { if (TRACEON) printf("31 ") ;  }
-	| stmts stmt
-               { if (TRACEON) printf("32 ") ;  }
+	stmt { 
+		if (TRACEON) printf("31 ") ;  
+	} | 
+	stmts stmt { 
+		if (TRACEON) printf("32 ") ;  
+	}
 	;
 
 
@@ -299,39 +301,39 @@ stmt:
 	expr_no_commas ';'{
 		fprintf(f_asm,"        addi sp, sp, 4\n");
 	  	fprintf(f_asm,"   \n");
-    }
+    } |
+	RETURN expr_no_commas 
 	;
 
 
 xdecls:
 	/* empty */
            { if (TRACEON) printf("102 ") ; }
-	| decls
+	| decls 
            { if (TRACEON) printf("103 ") ; }
 	;
 
 decls:
-	decl { 
+	decl ';' { 
 		if (TRACEON) printf("104 ") ;
     }
-	| decls decl { 
+	| decls decl ';'{ 
 		if (TRACEON) printf("106 ") ;
 	}
 	;
 
 decl:
-	TYPESPEC IDENTIFIER '=' primary {
+	TYPESPEC IDENTIFIER '=' INTEGER{
 		$$ = install_symbol($2);
-		if (TRACEON) printf("108 ") ;
 	} |
-	decl ',' IDENTIFIER '=' primary {
-		$$ = install_symbol($3);
-		if (TRACEON) printf("109 ") ;
+	decl ',' IDENTIFIER '=' INTEGER {
+		$$ = install_symbol($1);	
 	} |
-	TYPESPEC notype_declarator ';' { 
+	TYPESPEC IDENTIFIER{ 
+		if (TRACEON) printf("110 ");
 		$$ = install_symbol($2);
-		if (TRACEON) printf("110 ") ;
 	}
+	;
 
 %%
 

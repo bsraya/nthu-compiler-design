@@ -3,6 +3,7 @@
 void init_symbol_table();
 char * install_symbol(char *s);
 int look_up_symbol(char *s);
+int look_up_symbol_kw(char *s);
 void pop_up_symbol(int scope);
 void set_scope_and_offset_of_param(char *s);
 void set_local_vars(char *functor);
