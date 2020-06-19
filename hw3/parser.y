@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <error.h>
+#include <malloc.h>
+#include <math.h>
+#include <string.h>
 #include "code.h"
 
 int yylex();
@@ -46,7 +49,6 @@ char   *install_symbol();
 /* String constants in raw form.
    yylval is a STRING_CST node.  */
 %token STRING
-
 
 /* the reserved words */
 %token SIZEOF  IF ELSE WHILE DO FOR SWITCH CASE DEFAULT_TOKEN
@@ -159,7 +161,7 @@ expr_no_commas:
 		  int index;
 
 		  if (TRACEON) printf("17 ") ;
-		  s= $1;
+		  s = $1;
 		  if (!s) perror("improper expression at LHS");
 		  index = look_up_symbol(s);
 		  
@@ -191,22 +193,26 @@ expr_no_commas:
 		    fprintf(f_asm,"        sw t0, 0(sp)\n");
 
 		  }
-                }
+    }
 	| expr_no_commas '*' expr_no_commas
-		{ if (TRACEON) printf("18 ") ;
+		{ 
+			if (TRACEON) printf("18 ") ;
 
-		  fprintf(f_asm,"        lw t0, 0(sp)\n");
-		  fprintf(f_asm,"        addi sp, sp, 4\n");
-		  fprintf(f_asm,"        lw t1, 0(sp)\n");
-		  fprintf(f_asm,"        addi sp, sp, 4\n");
-		  fprintf(f_asm,"        mul  t0, t0, t1\n");
-		  fprintf(f_asm,"        addi sp, sp, -4\n");
-		  fprintf(f_asm,"        sw t0, 0(sp)\n");
-		  
-		  $$= NULL;
-                }
+			fprintf(f_asm,"        lw t0, 0(sp)\n");
+			fprintf(f_asm,"        addi sp, sp, 4\n");
+			fprintf(f_asm,"        lw t1, 0(sp)\n");
+			fprintf(f_asm,"        addi sp, sp, 4\n");
+			fprintf(f_asm,"        mul  t0, t0, t1\n");
+			fprintf(f_asm,"        addi sp, sp, -4\n");
+			fprintf(f_asm,"        sw t0, 0(sp)\n");
+			
+			$$= NULL;
+        }
 	| expr_no_commas ARITHCOMPARE expr_no_commas
-		{ if (TRACEON) printf("19 ") ; }
+		{ 
+			if (TRACEON) printf("19 ") ; 
+		}
+		
 	;
 
 
