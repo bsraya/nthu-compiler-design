@@ -109,6 +109,9 @@ extdefs:
 extdef:
 	TYPESPEC notype_declarator ';'
 	  	{ set_global_vars($2); }
+ | notype_declarator {
+	set_global_vars($1);
+	}
     | notype_declarator { 
 			if (TRACEON) printf("10 ");
 			cur_scope++;
@@ -127,7 +130,6 @@ extdef:
 	  { if (TRACEON) printf("8 "); }
 	| ';'
 	  { if (TRACEON) printf("9 "); }
-	| notype_declarator
 	;
 
 /* Must appear precede expr for resolve precedence problem */
