@@ -54,9 +54,10 @@ char   *install_symbol();
 %token SIZEOF  IF ELSE WHILE DO FOR SWITCH CASE DEFAULT_TOKEN
 %token BREAK CONTINUE RETURN GOTO ASM
 
-%type <ident> notype_declarator IDENTIFIER  primary expr_no_commas
+%type <ident> IDENTIFIER 
 %type <token> CONSTANT
-%type <ident> parmlist parm
+%type <token> INTEGER
+%type <ident> func_decl, declaration, parm, statement, expr_no_comma, primary, argument
 
 %type <charv> '{' 
 %type <charv> '}'
@@ -109,168 +110,34 @@ extdefs:
 	;
 
 extdef:
-	TYPESPEC notype_declarator ';'
-	  	{ set_global_vars($2); }
- | notype_declarator {
-	set_global_vars($1);
-	}
-    | notype_declarator { 
-			if (TRACEON) printf("10 ");
-			cur_scope++;
-			set_scope_and_offset_of_param($1);
-		    code_gen_func_header($1);
-    } '{' xdecls { 
-		if (TRACEON) printf("10.5 ");
+	func_decl {
+		cur_scope++;
+		set_scope_and_offset_of_param($1);
+		code_gen_func_header($1);
+	} 
+	'{' declarations {
 		set_local_vars($1);
-	} stmts {
-		if (TRACEON) printf("11 ");
+	} 
+	statements {
 		pop_up_symbol(cur_scope);
 		cur_scope--;
 		code_gen_at_end_of_function_body($1);
-    } '}'
-    | error ';'
-	  { if (TRACEON) printf("8 "); }
-	| ';'
-	  { if (TRACEON) printf("9 "); }
+	}
+	'}' 
+	| func_decl ';'
 	;
 
-/* Must appear precede expr for resolve precedence problem */
-/* A nonempty list of identifiers.  */
-
-/* modified */
-expr_no_commas:
-	primary { 
-		if (TRACEON) printf("15 ") ;
- 	    $$= $1;
-    }
-	| expr_no_commas '+' expr_no_commas { 
-        if (TRACEON) printf("16 ") ; 
-
-		fprintf(f_asm,"        lw t0, 0(sp)\n");
-		fprintf(f_asm,"        addi sp, sp, 4\n");
-		fprintf(f_asm,"        lw t1, 0(sp)\n");
-		fprintf(f_asm,"        addi sp, sp, 4\n");
-		fprintf(f_asm,"        add  t0, t0, t1\n");
-		fprintf(f_asm,"        addi sp, sp, -4\n");
-		fprintf(f_asm,"        sw t0, 0(sp)\n");
-
-		$$= NULL;
-    }
-	| expr_no_commas '=' expr_no_commas
-		{ char *s;
-		  int index;
-
-		  if (TRACEON) printf("17 ") ;
-		  s = $1;
-		  if (!s) perror("improper expression at LHS");
-		  index = look_up_symbol(s);
-		  
-
-		  fprintf(f_asm,"        lw  t0, 0(fp) \n");
-		  fprintf(f_asm,"        addi sp, sp, 4\n");
-		  fprintf(f_asm,"        lw  t1, 0(fp) \n");
-		  fprintf(f_asm,"        addi sp, sp, 4\n");
-		  
-		  switch(table[index].mode) {
-                  case ARGUMENT_MODE:
-
-		    fprintf(f_asm,"        sw  t0, %d(fp) \n", table[table[index].functor_index].total_locals *(-4)-16 +table[index].offset*(-4)  +(-4));
-		    fprintf(f_asm,"        addi sp, sp, -4\n");
-		    fprintf(f_asm,"        sw t0, 0(sp)\n");
-
-                    break;
-		  case LOCAL_MODE:
-
-		    fprintf(f_asm,"        sw  t0, %d(fp) \n", table[index].offset*4*(-1)-16);
-		    fprintf(f_asm,"        addi sp, sp, -4\n");
-		    fprintf(f_asm,"        sw t0, 0(sp)\n");
-                    break;
-		  default: /* Global Vars */
-
-		    fprintf(f_asm,"        lui     t2,%%hi(%s)\n", table[index].name);
-		    fprintf(f_asm,"        sw     t0,%%lo(%s)(t2)\n", table[index].name);
-		    fprintf(f_asm,"        addi sp, sp, -4\n");
-		    fprintf(f_asm,"        sw t0, 0(sp)\n");
-
-		  }
-    }
-	| expr_no_commas '*' expr_no_commas
-		{ 
-			if (TRACEON) printf("18 ") ;
-
-			fprintf(f_asm,"        lw t0, 0(sp)\n");
-			fprintf(f_asm,"        addi sp, sp, 4\n");
-			fprintf(f_asm,"        lw t1, 0(sp)\n");
-			fprintf(f_asm,"        addi sp, sp, 4\n");
-			fprintf(f_asm,"        mul  t0, t0, t1\n");
-			fprintf(f_asm,"        addi sp, sp, -4\n");
-			fprintf(f_asm,"        sw t0, 0(sp)\n");
-			
-			$$= NULL;
-        }
-	| expr_no_commas ARITHCOMPARE expr_no_commas
-		{ 
-			if (TRACEON) printf("19 ") ; 
-		}
-		
+func_decl:
+	type IDENTIFIER {
+		$$ = install_symbol($2);
+	} '(' parmlist ')' {
+		$$ = $2;
+	}
 	;
 
+type:
+	TYPESPEC | /*empty*/ {} ;
 
-/* modified */
-primary:
-    IDENTIFIER {    	  
-		int index;
-		if (TRACEON) printf("20 ") ;       
-		index =look_up_symbol($1);
-		switch(table[index].mode) {
-			case ARGUMENT_MODE:
-				fprintf(f_asm,"        lw  t0, %d(fp) \n",
-					table[table[index].functor_index].total_locals *(-4)-16 +table[index].offset*(-4)  +(-4));
-				fprintf(f_asm,"        addi sp, sp, -4\n");
-				fprintf(f_asm,"        sw t0, 0(sp)\n");
-				break;
-			case LOCAL_MODE:
-				fprintf(f_asm,"        lw  t0, %d(fp) \n",table[index].offset*4*(-1)-16);
-				fprintf(f_asm,"        addi sp, sp, -4\n");
-				fprintf(f_asm,"        sw t0, 0(sp)\n");
-				break;
-			default: /* Global Vars */
-				fprintf(f_asm,"        lui     t0,%%hi(%s)\n", table[index].name);
-				fprintf(f_asm,"        lw     t1, %%lo(%s)(t0)\n", table[index].name);
-				fprintf(f_asm,"        addi sp, sp, -4\n");
-				fprintf(f_asm,"        sw t1, 0(sp)\n");
-		}
-		$$=$1;
-        }
-	| CONSTANT
-		{ 
-			if (TRACEON) printf("21 ") ;
-			fprintf(f_asm,"        li t0,   %d\n",$1);
-			fprintf(f_asm,"        addi sp, sp, -4\n");
-			fprintf(f_asm,"        sw t0, 0(sp)\n");
-		}
-	| STRING
-		{ 
-			if (TRACEON) printf("22 ") ;
-        }
-	| primary PLUSPLUS
-		{ 
-		  	if (TRACEON) printf("23 ") ;
-        }
-	;
-
-notype_declarator:
-	notype_declarator '(' parmlist ')'  %prec '.'
-		{   
-			if (TRACEON) printf("24 ") ;
-		    $$=$1;
-		}                  
-	| IDENTIFIER
-		{   
-			if (TRACEON) printf("25 ") ;
-			$$=install_symbol($1);
-        }                  
-	;
 
 /* This is what appears inside the parens in a function declarator.
    Is value is represented in the format that grokdeclarator expects.  */
@@ -284,60 +151,104 @@ parmlist:
 
 /* A nonempty list of parameter declarations or type names.  */
 parms:	
-	parm
-  		{ if (TRACEON) printf("28 ") ;  }
-	| parms ',' parm
-  		{ if (TRACEON) printf("29 ") ;  }
+	parm | parms ',' parm
 	;
 
 parm:
-	TYPESPEC notype_declarator
+	/*empty*/ {} |
+	TYPESPEC IDENTIFIER
   		{ 
-			if (TRACEON) printf("30 ") ;  
 			$$ = install_symbol($2);
 		}
    ;
 
 
-/* at least one statement, the first of which parses without error.  */
-/* stmts is used only after decls, so an invalid first statement
-   is actually regarded as an invalid decl and part of the decls.  */
-
-stmts:
-	stmt
-		{ if (TRACEON) printf("31 ") ;  }
-	| stmts stmt
-		{ if (TRACEON) printf("32 ") ;  }
-	;
-
-
-/* modified */
-stmt:
-	expr_no_commas ';' {
-	  	fprintf(f_asm,"        addi sp, sp, 4\n");
-		fprintf(f_asm,"   \n");
-	}
-	;
-
-
-xdecls:
-	/* empty */
-           { if (TRACEON) printf("102 ") ; }
-	| decls
-           { if (TRACEON) printf("103 ") ; }
-	;
-
-decls:
-	decl
+declarations:
+	declaration ';'
         { if (TRACEON) printf("104 ") ; }
-	| decls decl
+	| declarations declaration ';'
 		{ if (TRACEON) printf("106 ") ; }
 	;
 
-decl:	 
-	TYPESPEC notype_declarator ';' { 
-		if (TRACEON) printf("110 ") ;
+declaration:	 
+	TYPESPEC IDENTIFIER { 
+		$$ = install_symbol($2);
+	} |
+	TYPESPEC IDENTIFIER '=' INTEGER {
+		$$ = install_symbol($2);
+	} |
+	declaration ',' IDENTIFIER '=' CONSTANT {
+		$$ = install_symbol($3);
+	}	
+	;
+
+statements:
+	statements statement ';' | statement ';'
+	;
+
+statement:
+	expr_no_comma |
+	IDENTIFIER '=' expr_no_comma
+	;
+
+expr_no_comma:
+	primary |
+	IDENTIFIER '(' arguments ')' {
+		$$ = install_symbol($1);
 	}
+	;
+
+arguments:
+	arguments ',' argument | argument;
+
+argument:
+	CONSTANT;
+
+primary:
+    IDENTIFIER {    	  
+		int index;
+		  index =look_up_symbol($1);
+		  switch(table[index].mode) {
+                  case ARGUMENT_MODE:
+		    fprintf(f_asm,"        lw  t0, %d(fp) \n",
+			    table[table[index].functor_index].total_locals *(-4)-16 +table[index].offset*(-4)  +(-4));
+		    fprintf(f_asm,"        addi sp, sp, -4\n");
+		    fprintf(f_asm,"        sw t0, 0(sp)\n");
+
+                    break;
+		  case LOCAL_MODE:
+
+		    fprintf(f_asm,"        lw  t0, %d(fp) \n",table[index].offset*4*(-1)-16);
+		    fprintf(f_asm,"        addi sp, sp, -4\n");
+		    fprintf(f_asm,"        sw t0, 0(sp)\n");
+
+                    break;
+		  default: /* Global Vars */
+
+		    fprintf(f_asm,"        lui     t0,%%hi(%s)\n", table[index].name);
+		    fprintf(f_asm,"        lw     t1, %%lo(%s)(t0)\n", table[index].name);
+		    fprintf(f_asm,"        addi sp, sp, -4\n");
+		    fprintf(f_asm,"        sw t1, 0(sp)\n");
+
+		  }
+		  $$=$1;
+         }
+	| CONSTANT
+                { if (TRACEON) printf("21 ") ;
+		  fprintf(f_asm,"        li t0,   %d\n",$1);
+		  fprintf(f_asm,"        addi sp, sp, -4\n");
+		  fprintf(f_asm,"        sw t0, 0(sp)\n");
+                }
+	| STRING
+		{ 
+		  if (TRACEON) printf("22 ") ;
+                }
+	| primary PLUSPLUS
+		{ 
+		  if (TRACEON) printf("23 ") ;
+                }
+
+        ;
 
 %%
 
