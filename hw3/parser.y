@@ -284,10 +284,6 @@ expr_no_comma:
 		{ 
 
 		}
-	| IDENTIFIER '(' arguments ')' 
-		{
-			$$ = install_symbol($1);
-		}
 	;
 
 arguments:
