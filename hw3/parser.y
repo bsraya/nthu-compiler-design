@@ -187,7 +187,7 @@ statements:
 	;
 
 statement:
-	expr_no_comma 
+	IDENTIFIER expr_no_comma 
 	{
 		fprintf(f_asm, "        addi sp, sp, 4\n");
 		fprintf(f_asm, "   \n");
