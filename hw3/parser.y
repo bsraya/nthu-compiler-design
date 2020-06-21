@@ -177,6 +177,9 @@ declaration:
 	TYPESPEC IDENTIFIER '=' INTEGER {
 		$$ = install_symbol($2);
 	} |
+	TYPESPEC IDENTIFIER '=' expr_no_comma {
+		$$ = install_symbol($2);
+	}|
 	declaration ',' IDENTIFIER '=' CONSTANT {
 		$$ = install_symbol($3);
 	}	
@@ -187,7 +190,7 @@ statements:
 	;
 
 statement:
-	IDENTIFIER expr_no_comma 
+	expr_no_comma 
 	{
 		fprintf(f_asm, "        addi sp, sp, 4\n");
 		fprintf(f_asm, "   \n");
