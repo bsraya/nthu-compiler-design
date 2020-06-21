@@ -20,6 +20,7 @@ extern FILE *f_asm;
 int    errcnt=0;
 int    errline=0;
 char   *install_symbol();
+int args = 0;
 %}
 
 %start program
@@ -57,7 +58,7 @@ char   *install_symbol();
 %type <ident> IDENTIFIER 
 %type <token> CONSTANT
 %type <token> INTEGER
-%type <ident> func_decl, declaration, parm, statement, expr_no_comma, primary, argument
+%type <ident> func_decl, statement, expr_no_comma, argument
 
 %type <charv> '{' 
 %type <charv> '}'
@@ -113,8 +114,10 @@ extdef:
 	func_decl {
 		cur_scope++;
 		set_scope_and_offset_of_param($1);
-		code_gen_func_header($1);
+		fprintf(f_asm, ".global %s\n", $1);
+		fprintf(f_asm, "%s:\n", $1);
 		fprintf(f_asm, "	// BEGIN PROLOGUE\n");
+		fprintf(f_asm, "	// %s is the callee here, so we save callee-saved registers\n", $1);
 		fprintf(f_asm, "	sw s0, -4(sp) // save frame pointer\n");
 		fprintf(f_asm, "	addi sp, sp, -4\n");
 		fprintf(f_asm, "	addi s0, sp, 0 // set new frame\n");
@@ -131,12 +134,9 @@ extdef:
 		fprintf(f_asm, "	sw s10, -44(s0)\n");
 		fprintf(f_asm, "	sw s11, -48(s0)\n");
 		fprintf(f_asm, "	addi sp, s0, -48 // update stack pointer \n");
-		fprintf(f_asm, "	// END PROLOGUE\n");
+		fprintf(f_asm, "	// END PROLOGUE\n\n");
 	} 
-	'{' declarations {
-		
-		set_local_vars($1);
-	} 
+	'{' 
 	statements {
 		pop_up_symbol(cur_scope);
 		cur_scope--;
@@ -160,7 +160,6 @@ extdef:
 		fprintf(f_asm, "	// END PROLOGUE\n");
 		fprintf(f_asm, "	\n");
 		fprintf(f_asm, "	jalr zero, 0(ra) // return");
-		code_gen_at_end_of_function_body($1);
 	}
 	'}'
 	| func_decl ';' 
@@ -174,66 +173,26 @@ func_decl:
 	}
 	;
 
+parmlist: 
+	/*empty*/
+	;
+
 type:
 	TYPESPEC | /*empty*/ {} ;
-
-
-/* This is what appears inside the parens in a function declarator.
-   Is value is represented in the format that grokdeclarator expects.  */
-parmlist:  
-	/* empty */
-		{ if (TRACEON) printf("26 ") ; }	
-	| parms
-  		{ if (TRACEON) printf("27 ") ;  }
-		
-	;
-
-/* A nonempty list of parameter declarations or type names.  */
-parms:	
-	parm | parms ',' parm
-	;
-
-parm:
-	/*empty*/ {} |
-	CONSTANT|
-	TYPESPEC IDENTIFIER
-  		{ 
-			$$ = install_symbol($2);
-		}
-   ;
-
-
-declarations:
-	declaration ';'
-        { if (TRACEON) printf("104 ") ; }
-	| declarations declaration ';'
-		{ if (TRACEON) printf("106 ") ; }
-	;
-
-declaration:	 
-	TYPESPEC IDENTIFIER { 
-		$$ = install_symbol($2);
-	} |
-	TYPESPEC IDENTIFIER '=' INTEGER {
-		$$ = install_symbol($2);
-	} |
-	TYPESPEC IDENTIFIER '=' expr_no_comma {
-		$$ = install_symbol($2);
-	}|
-	declaration ',' IDENTIFIER '=' CONSTANT {
-		$$ = install_symbol($3);
-	}	
-	;
 
 statements:
 	statements statement ';' | statement ';'
 	;
 
 statement:
-	expr_no_comma 
 	{
-		fprintf(f_asm, "        addi sp, sp, 4\n");
-		fprintf(f_asm, "   \n");
+		fprintf(f_asm, "	sw ra, -4(sp)\n");  
+  		fprintf(f_asm, "	addi sp, sp, -4\n");
+	} expr_no_comma 
+	{
+		fprintf(f_asm, "    addi sp, sp, 4\n");
+		fprintf(f_asm, "    \n");
+		args = 0;
 	} 
 	;
 
@@ -241,145 +200,18 @@ arguments:
 	arguments ',' argument | argument;
 
 argument:
-	CONSTANT | identifiers | expr_no_comma;
-
-expr_no_comma:
-	primary
-        { 
- 			$$ = $1;
-        }
-	| IDENTIFIER '(' arguments ')' {
-		fprintf(f_asm, "        jal ra, %s\n", $1);
-		fprintf(f_asm, "	lw ra, 0(sp)\n");
+	CONSTANT {
+		$$ = NULL;
+		fprintf(f_asm,"    li a%d, %d\n", args, $1);
+		args++;
 	}
-	| '(' expr_no_comma ')' 
-	| expr_no_comma '+' expr_no_comma
-		{ 
-			fprintf(f_asm,"        lw t0, 0(sp)\n");
-			fprintf(f_asm,"        addi sp, sp, 4\n");
-			fprintf(f_asm,"        lw t1, 0(sp)\n");
-			fprintf(f_asm,"        addi sp, sp, 4\n");
-			fprintf(f_asm,"        add  t0, t0, t1\n");
-			fprintf(f_asm,"        addi sp, sp, -4\n");
-			fprintf(f_asm,"        sw t0, 0(sp)\n");
-			$$= NULL;
-        }
-	| expr_no_comma '-' expr_no_comma 
-		{
-			fprintf(f_asm,"        lw t0, 0(sp)\n");
-			fprintf(f_asm,"        addi sp, sp, 4\n");
-			fprintf(f_asm,"        lw t1, 0(sp)\n");
-			fprintf(f_asm,"        addi sp, sp, 4\n");
-			fprintf(f_asm,"        sub  t0, t0, t1\n");
-			fprintf(f_asm,"        addi sp, sp, -4\n");
-			fprintf(f_asm,"        sw t0, 0(sp)\n");
-			$$= NULL;
-		}
-	| expr_no_comma '=' expr_no_comma
-		{ 
-			char *s;
-			int index;
-
-			if (TRACEON) printf("17 ") ;
-			s= $1;
-			if (!s) perror("improper expression at LHS");
-			index = look_up_symbol(s);
-			
-
-			fprintf(f_asm,"        lw  t0, 0(fp) \n");
-			fprintf(f_asm,"        addi sp, sp, 4\n");
-			fprintf(f_asm,"        lw  t1, 0(fp) \n");
-			fprintf(f_asm,"        addi sp, sp, 4\n");
-			
-			switch(table[index].mode) {
-				case ARGUMENT_MODE:
-					fprintf(f_asm,"        sw  t0, %d(fp) \n", 
-						table[table[index].functor_index].total_locals *(-4)-16 +table[index].offset*(-4)  +(-4));
-					fprintf(f_asm,"        addi sp, sp, -4\n");
-					fprintf(f_asm,"        sw t0, 0(sp)\n");
-					break;
-
-				case LOCAL_MODE:
-					fprintf(f_asm,"        sw  t0, %d(fp) \n", table[index].offset*4*(-1)-16);
-					fprintf(f_asm,"        addi sp, sp, -4\n");
-					fprintf(f_asm,"        sw t0, 0(sp)\n");
-					break;
-
-				default: /* Global Vars */
-					fprintf(f_asm,"        lui     t2,%%hi(%s)\n", table[index].name);
-					fprintf(f_asm,"        sw     t0,%%lo(%s)(t2)\n", table[index].name);
-					fprintf(f_asm,"        addi sp, sp, -4\n");
-					fprintf(f_asm,"        sw t0, 0(sp)\n");
-		}
-    }
-	| expr_no_comma '*' expr_no_comma
-		{
-			fprintf(f_asm,"        lw t0, 0(sp)\n");
-			fprintf(f_asm,"        addi sp, sp, 4\n");
-			fprintf(f_asm,"        lw t1, 0(sp)\n");
-			fprintf(f_asm,"        addi sp, sp, 4\n");
-			fprintf(f_asm,"        mul  t0, t0, t1\n");
-			fprintf(f_asm,"        addi sp, sp, -4\n");
-			fprintf(f_asm,"        sw t0, 0(sp)\n");
-			$$= NULL;
-    	}
-	| expr_no_comma '/' expr_no_comma
-		{
-			fprintf(f_asm,"        lw t0, 0(sp)\n");
-			fprintf(f_asm,"        addi sp, sp, 4\n");
-			fprintf(f_asm,"        lw t1, 0(sp)\n");
-			fprintf(f_asm,"        addi sp, sp, 4\n");
-			fprintf(f_asm,"        div  t0, t0, t1\n");
-			fprintf(f_asm,"        addi sp, sp, -4\n");
-			fprintf(f_asm,"        sw t0, 0(sp)\n");
-			$$= NULL;
-    	}
-	| expr_no_comma ARITHCOMPARE expr_no_comma
-		{ 
-
-		}
 	;
 
-primary:
-    IDENTIFIER {    	  
-		int index;
-		index = look_up_symbol($1);
-		switch(table[index].mode) {
-			case ARGUMENT_MODE:
-				fprintf(f_asm,"        lw  t0, %d(fp) \n",
-					table[table[index].functor_index].total_locals *(-4)-16 +table[index].offset*(-4)  +(-4));
-				fprintf(f_asm,"        addi sp, sp, -4\n");
-				fprintf(f_asm,"        sw t0, 0(sp)\n");
-				break;
-			
-			case LOCAL_MODE:
-				fprintf(f_asm,"        lw  t0, %d(fp) \n",table[index].offset*4*(-1)-16);
-				fprintf(f_asm,"        addi sp, sp, -4\n");
-				fprintf(f_asm,"        sw t0, 0(sp)\n");
-				break;
-
-			default: /* Global Vars */
-				fprintf(f_asm,"        lui     t0,%%hi(%s)\n", table[index].name);
-				fprintf(f_asm,"        lw     t1, %%lo(%s)(t0)\n", table[index].name);
-				fprintf(f_asm,"        addi sp, sp, -4\n");
-				fprintf(f_asm,"        sw t1, 0(sp)\n");
-		}
-		$$=$1;
+expr_no_comma:
+	IDENTIFIER '(' arguments ')' {
+		fprintf(f_asm, "    jal ra, %s\n", $1);
+		fprintf(f_asm, "	lw ra, 0(sp)\n");
 	}
-	| CONSTANT
-        { 
-			fprintf(f_asm,"        li t0,   %d\n",$1);
-			fprintf(f_asm,"        addi sp, sp, -4\n");
-			fprintf(f_asm,"        sw t0, 0(sp)\n");
-        }
-	| STRING
-		{ 
-		  if (TRACEON) printf("22 ") ;
-        }
-	| primary PLUSPLUS
-		{ 
-		  if (TRACEON) printf("23 ") ;
-        }
 	;
 
 %%

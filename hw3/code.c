@@ -138,8 +138,6 @@ void code_gen_global_vars() {
     }
   }
   fprintf(f_asm," \n");
-  fprintf(f_asm,"        .ident \"NTHU Compiler Class Code Generator for RISC-V\"\n");  
-  fprintf(f_asm,"        .section \"note.stack\",\"\",@progbits\n");  
 }
 
 
