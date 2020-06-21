@@ -187,8 +187,11 @@ statements:
 	;
 
 statement:
-	expr_no_comma |
-	IDENTIFIER '=' expr_no_comma
+	expr_no_comma 
+	{
+		fprintf(f_asm, "        addi sp, sp, 4\n");
+		fprintf(f_asm, "   \n");
+	}
 	;
 
 expr_no_comma:
@@ -266,7 +269,7 @@ expr_no_comma:
 			fprintf(f_asm,"        sw t0, 0(sp)\n");
 			$$= NULL;
     	}
-	| expr_no_comma DIVOP expr_no_comma
+	| expr_no_comma '/' expr_no_comma
 		{
 			fprintf(f_asm,"        lw t0, 0(sp)\n");
 			fprintf(f_asm,"        addi sp, sp, 4\n");
@@ -277,7 +280,7 @@ expr_no_comma:
 			fprintf(f_asm,"        sw t0, 0(sp)\n");
 			$$= NULL;
     	}
-	| expr_no_comma MODOP expr_no_comma
+	| expr_no_comma '%' expr_no_comma
 		{
 			fprintf(f_asm,"        lw t0, 0(sp)\n");
 			fprintf(f_asm,"        addi sp, sp, 4\n");
@@ -292,7 +295,7 @@ expr_no_comma:
 		{ 
 
 		}
-	| expr_no_comma '(' arguments ')' 
+	| IDENTIFIER '(' arguments ')' 
 		{
 			$$ = install_symbol($1);
 		}
