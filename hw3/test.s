@@ -118,14 +118,6 @@ codegen:
 	lw ra, 0(sp)
         addi sp, sp, 4
    
-   #    
-        ld ra,40(sp) # old ra
-        ld fp,32(sp) # old fp
-        addi sp,sp,48# pop activiation record
-        ret
-.Lfunc_codegen_end0:
-        .size      codegen, .Lfunc_codegen_end0-codegen 
-       
 	// BEGIN PROLOGUE
 	// restore callee-saved registers
 	// s0 at this point should be the same in prologue
@@ -145,6 +137,14 @@ codegen:
  	lw s0, -4(sp)
 	// END PROLOGUE
 	
-	jalr zero, 0(ra) // return 
+	jalr zero, 0(ra) // return   #    
+        ld ra,40(sp) # old ra
+        ld fp,32(sp) # old fp
+        addi sp,sp,48# pop activiation record
+        ret
+.Lfunc_codegen_end0:
+        .size      codegen, .Lfunc_codegen_end0-codegen 
+       
+ 
         .ident "NTHU Compiler Class Code Generator for RISC-V"
         .section "note.stack","",@progbits

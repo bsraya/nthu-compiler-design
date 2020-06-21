@@ -140,9 +140,6 @@ extdef:
 	statements {
 		pop_up_symbol(cur_scope);
 		cur_scope--;
-		code_gen_at_end_of_function_body($1);
-	}
-	'}' {
 		fprintf(f_asm, "	// BEGIN PROLOGUE\n");
 		fprintf(f_asm, "	// restore callee-saved registers\n");
 		fprintf(f_asm, "	// s0 at this point should be the same in prologue\n");
@@ -163,8 +160,10 @@ extdef:
 		fprintf(f_asm, "	// END PROLOGUE\n");
 		fprintf(f_asm, "	\n");
 		fprintf(f_asm, "	jalr zero, 0(ra) // return");
+		code_gen_at_end_of_function_body($1);
 	}
-	| func_decl ';'
+	'}'
+	| func_decl ';' 
 	;
 
 func_decl:
