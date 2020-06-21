@@ -280,17 +280,6 @@ expr_no_comma:
 			fprintf(f_asm,"        sw t0, 0(sp)\n");
 			$$= NULL;
     	}
-	| expr_no_comma '%' expr_no_comma
-		{
-			fprintf(f_asm,"        lw t0, 0(sp)\n");
-			fprintf(f_asm,"        addi sp, sp, 4\n");
-			fprintf(f_asm,"        lw t1, 0(sp)\n");
-			fprintf(f_asm,"        addi sp, sp, 4\n");
-			fprintf(f_asm,"        rem  t0, t0, t1\n");
-			fprintf(f_asm,"        addi sp, sp, -4\n");
-			fprintf(f_asm,"        sw t0, 0(sp)\n");
-			$$= NULL;
-    	}
 	| expr_no_comma ARITHCOMPARE expr_no_comma
 		{ 
 
