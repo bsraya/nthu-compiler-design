@@ -202,6 +202,7 @@ expr_no_comma:
         { 
  			$$ = $1;
         }
+	| '(' expr_no_comma ')'
 	| expr_no_comma '+' expr_no_comma
 		{ 
 			fprintf(f_asm,"        lw t0, 0(sp)\n");
