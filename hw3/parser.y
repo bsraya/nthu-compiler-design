@@ -192,10 +192,110 @@ statement:
 	;
 
 expr_no_comma:
-	primary |
-	IDENTIFIER '(' arguments ')' {
-		$$ = install_symbol($1);
-	}
+	primary
+        { 
+ 			$$ = $1;
+        }
+	| expr_no_comma '+' expr_no_comma
+		{ 
+			fprintf(f_asm,"        lw t0, 0(sp)\n");
+			fprintf(f_asm,"        addi sp, sp, 4\n");
+			fprintf(f_asm,"        lw t1, 0(sp)\n");
+			fprintf(f_asm,"        addi sp, sp, 4\n");
+			fprintf(f_asm,"        add  t0, t0, t1\n");
+			fprintf(f_asm,"        addi sp, sp, -4\n");
+			fprintf(f_asm,"        sw t0, 0(sp)\n");
+			$$= NULL;
+        }
+	| expr_no_comma '-' expr_no_comma 
+		{
+			fprintf(f_asm,"        lw t0, 0(sp)\n");
+			fprintf(f_asm,"        addi sp, sp, 4\n");
+			fprintf(f_asm,"        lw t1, 0(sp)\n");
+			fprintf(f_asm,"        addi sp, sp, 4\n");
+			fprintf(f_asm,"        sub  t0, t0, t1\n");
+			fprintf(f_asm,"        addi sp, sp, -4\n");
+			fprintf(f_asm,"        sw t0, 0(sp)\n");
+			$$= NULL;
+		}
+	| expr_no_comma '=' expr_no_comma
+		{ 
+			char *s;
+			int index;
+
+			if (TRACEON) printf("17 ") ;
+			s= $1;
+			if (!s) perror("improper expression at LHS");
+			index = look_up_symbol(s);
+			
+
+			fprintf(f_asm,"        lw  t0, 0(fp) \n");
+			fprintf(f_asm,"        addi sp, sp, 4\n");
+			fprintf(f_asm,"        lw  t1, 0(fp) \n");
+			fprintf(f_asm,"        addi sp, sp, 4\n");
+			
+			switch(table[index].mode) {
+				case ARGUMENT_MODE:
+					fprintf(f_asm,"        sw  t0, %d(fp) \n", 
+						table[table[index].functor_index].total_locals *(-4)-16 +table[index].offset*(-4)  +(-4));
+					fprintf(f_asm,"        addi sp, sp, -4\n");
+					fprintf(f_asm,"        sw t0, 0(sp)\n");
+					break;
+
+				case LOCAL_MODE:
+					fprintf(f_asm,"        sw  t0, %d(fp) \n", table[index].offset*4*(-1)-16);
+					fprintf(f_asm,"        addi sp, sp, -4\n");
+					fprintf(f_asm,"        sw t0, 0(sp)\n");
+					break;
+
+				default: /* Global Vars */
+					fprintf(f_asm,"        lui     t2,%%hi(%s)\n", table[index].name);
+					fprintf(f_asm,"        sw     t0,%%lo(%s)(t2)\n", table[index].name);
+					fprintf(f_asm,"        addi sp, sp, -4\n");
+					fprintf(f_asm,"        sw t0, 0(sp)\n");
+		}
+    }
+	| expr_no_comma '*' expr_no_comma
+		{
+			fprintf(f_asm,"        lw t0, 0(sp)\n");
+			fprintf(f_asm,"        addi sp, sp, 4\n");
+			fprintf(f_asm,"        lw t1, 0(sp)\n");
+			fprintf(f_asm,"        addi sp, sp, 4\n");
+			fprintf(f_asm,"        mul  t0, t0, t1\n");
+			fprintf(f_asm,"        addi sp, sp, -4\n");
+			fprintf(f_asm,"        sw t0, 0(sp)\n");
+			$$= NULL;
+    	}
+	| expr_no_comma DIVOP expr_no_comma
+		{
+			fprintf(f_asm,"        lw t0, 0(sp)\n");
+			fprintf(f_asm,"        addi sp, sp, 4\n");
+			fprintf(f_asm,"        lw t1, 0(sp)\n");
+			fprintf(f_asm,"        addi sp, sp, 4\n");
+			fprintf(f_asm,"        div  t0, t0, t1\n");
+			fprintf(f_asm,"        addi sp, sp, -4\n");
+			fprintf(f_asm,"        sw t0, 0(sp)\n");
+			$$= NULL;
+    	}
+	| expr_no_comma MODOP expr_no_comma
+		{
+			fprintf(f_asm,"        lw t0, 0(sp)\n");
+			fprintf(f_asm,"        addi sp, sp, 4\n");
+			fprintf(f_asm,"        lw t1, 0(sp)\n");
+			fprintf(f_asm,"        addi sp, sp, 4\n");
+			fprintf(f_asm,"        rem  t0, t0, t1\n");
+			fprintf(f_asm,"        addi sp, sp, -4\n");
+			fprintf(f_asm,"        sw t0, 0(sp)\n");
+			$$= NULL;
+    	}
+	| expr_no_comma ARITHCOMPARE expr_no_comma
+		{ 
+
+		}
+	| expr_no_comma '(' arguments ')' 
+		{
+			$$ = install_symbol($1);
+		}
 	;
 
 arguments:
@@ -207,51 +307,46 @@ argument:
 primary:
     IDENTIFIER {    	  
 		int index;
-		  index =look_up_symbol($1);
-		  switch(table[index].mode) {
-                  case ARGUMENT_MODE:
-		    fprintf(f_asm,"        lw  t0, %d(fp) \n",
-			    table[table[index].functor_index].total_locals *(-4)-16 +table[index].offset*(-4)  +(-4));
-		    fprintf(f_asm,"        addi sp, sp, -4\n");
-		    fprintf(f_asm,"        sw t0, 0(sp)\n");
+		index = look_up_symbol($1);
+		switch(table[index].mode) {
+			case ARGUMENT_MODE:
+				fprintf(f_asm,"        lw  t0, %d(fp) \n",
+					table[table[index].functor_index].total_locals *(-4)-16 +table[index].offset*(-4)  +(-4));
+				fprintf(f_asm,"        addi sp, sp, -4\n");
+				fprintf(f_asm,"        sw t0, 0(sp)\n");
+				break;
+			
+			case LOCAL_MODE:
+				fprintf(f_asm,"        lw  t0, %d(fp) \n",table[index].offset*4*(-1)-16);
+				fprintf(f_asm,"        addi sp, sp, -4\n");
+				fprintf(f_asm,"        sw t0, 0(sp)\n");
+				break;
 
-                    break;
-		  case LOCAL_MODE:
-
-		    fprintf(f_asm,"        lw  t0, %d(fp) \n",table[index].offset*4*(-1)-16);
-		    fprintf(f_asm,"        addi sp, sp, -4\n");
-		    fprintf(f_asm,"        sw t0, 0(sp)\n");
-
-                    break;
-		  default: /* Global Vars */
-
-		    fprintf(f_asm,"        lui     t0,%%hi(%s)\n", table[index].name);
-		    fprintf(f_asm,"        lw     t1, %%lo(%s)(t0)\n", table[index].name);
-		    fprintf(f_asm,"        addi sp, sp, -4\n");
-		    fprintf(f_asm,"        sw t1, 0(sp)\n");
-
-		  }
-		  $$=$1;
-         }
+			default: /* Global Vars */
+				fprintf(f_asm,"        lui     t0,%%hi(%s)\n", table[index].name);
+				fprintf(f_asm,"        lw     t1, %%lo(%s)(t0)\n", table[index].name);
+				fprintf(f_asm,"        addi sp, sp, -4\n");
+				fprintf(f_asm,"        sw t1, 0(sp)\n");
+		}
+		$$=$1;
+	}
 	| CONSTANT
-                { if (TRACEON) printf("21 ") ;
-		  fprintf(f_asm,"        li t0,   %d\n",$1);
-		  fprintf(f_asm,"        addi sp, sp, -4\n");
-		  fprintf(f_asm,"        sw t0, 0(sp)\n");
-                }
+        { 
+			fprintf(f_asm,"        li t0,   %d\n",$1);
+			fprintf(f_asm,"        addi sp, sp, -4\n");
+			fprintf(f_asm,"        sw t0, 0(sp)\n");
+        }
 	| STRING
 		{ 
 		  if (TRACEON) printf("22 ") ;
-                }
+        }
 	| primary PLUSPLUS
 		{ 
 		  if (TRACEON) printf("23 ") ;
-                }
-
-        ;
+        }
+	;
 
 %%
-
 
 /*
  *	  s - the error message to be printed

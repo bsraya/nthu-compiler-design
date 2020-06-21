@@ -33,6 +33,8 @@ blank		[ \t]+
 %%
 {blank}			; /* do nothing */
 "\n"			{ lineno++;			}
+"%" { printf("A mod op: %s\n", yytext); return(MODOP);}
+"/" { printf("A div op: %s\n", yytext); return(DIVOP)}
 "("			{ printf("An lp: %s\n", yytext);
                           return('(');                  }
 ")"			{ printf("An rp: %s\n", yytext);
