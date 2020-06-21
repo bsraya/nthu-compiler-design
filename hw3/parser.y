@@ -114,8 +114,27 @@ extdef:
 		cur_scope++;
 		set_scope_and_offset_of_param($1);
 		code_gen_func_header($1);
+		fprintf(f_asm, "	// BEGIN PROLOGUE\n");
+		fprintf(f_asm, "	sw s0, -4(sp) // save frame pointer\n");
+		fprintf(f_asm, "	addi sp, sp, -4\n");
+		fprintf(f_asm, "	addi s0, sp, 0 // set new frame\n");
+		fprintf(f_asm, "	sw sp, -4(s0)\n");
+		fprintf(f_asm, "	sw s1, -8(s0)\n");
+		fprintf(f_asm, "	sw s2, -12(s0)\n");
+		fprintf(f_asm, "	sw s3, -16(s0)\n");
+		fprintf(f_asm, "	sw s4, -20(s0)\n");
+		fprintf(f_asm, "	sw s5, -24(s0)\n");
+		fprintf(f_asm, "	sw s6, -28(s0)\n");
+		fprintf(f_asm, "	sw s7, -32(s0)\n");
+		fprintf(f_asm, "	sw s8, -36(s0)\n");
+		fprintf(f_asm, "	sw s9, -40(s0)\n");
+		fprintf(f_asm, "	sw s10, -44(s0)\n");
+		fprintf(f_asm, "	sw s11, -48(s0)\n");
+		fprintf(f_asm, "	addi sp, s0, -48 // update stack pointer \n");
+		fprintf(f_asm, "	// END PROLOGUE\n");
 	} 
 	'{' declarations {
+		
 		set_local_vars($1);
 	} 
 	statements {
@@ -123,7 +142,28 @@ extdef:
 		cur_scope--;
 		code_gen_at_end_of_function_body($1);
 	}
-	'}' 
+	'}' {
+		fprintf(f_asm, "	// BEGIN PROLOGUE\n");
+		fprintf(f_asm, "	// restore callee-saved registers\n");
+		fprintf(f_asm, "	// s0 at this point should be the same in prologue\n");
+		fprintf(f_asm, "	lw s11, -48(s0)\n");
+		fprintf(f_asm, "	lw s10, -44(s0)\n");
+		fprintf(f_asm, "	lw s9, -40(s0)\n");
+		fprintf(f_asm, "	lw s8, -36(s0)\n");
+		fprintf(f_asm, "	lw s7, -32(s0)\n");
+		fprintf(f_asm, "	lw s6, -28(s0)\n");
+		fprintf(f_asm, "	lw s5, -24(s0)\n");
+		fprintf(f_asm, "	lw s4, -20(s0)\n");
+		fprintf(f_asm, "	lw s3, -16(s0)\n");
+		fprintf(f_asm, "	lw s2, -12(s0)\n");
+		fprintf(f_asm, "	lw s1, -8(s0)\n");
+		fprintf(f_asm, "	lw sp, -4(s0)\n");
+		fprintf(f_asm, "	addi sp, sp, 4 \n");
+		fprintf(f_asm, " 	lw s0, -4(sp)\n");
+		fprintf(f_asm, "	// END PROLOGUE\n");
+		fprintf(f_asm, "	\n");
+		fprintf(f_asm, "	jalr zero, 0(ra) // return");
+	}
 	| func_decl ';'
 	;
 
@@ -156,6 +196,7 @@ parms:
 
 parm:
 	/*empty*/ {} |
+	CONSTANT|
 	TYPESPEC IDENTIFIER
   		{ 
 			$$ = install_symbol($2);
@@ -194,14 +235,24 @@ statement:
 	{
 		fprintf(f_asm, "        addi sp, sp, 4\n");
 		fprintf(f_asm, "   \n");
-	}
+	} 
 	;
+
+arguments:
+	arguments ',' argument | argument;
+
+argument:
+	CONSTANT | identifiers | expr_no_comma;
 
 expr_no_comma:
 	primary
         { 
  			$$ = $1;
         }
+	| IDENTIFIER '(' arguments ')' {
+		fprintf(f_asm, "        jal ra, %s\n", $1);
+		fprintf(f_asm, "	lw ra, 0(sp)\n");
+	}
 	| '(' expr_no_comma ')' 
 	| expr_no_comma '+' expr_no_comma
 		{ 
@@ -289,12 +340,6 @@ expr_no_comma:
 
 		}
 	;
-
-arguments:
-	arguments ',' argument | argument;
-
-argument:
-	CONSTANT;
 
 primary:
     IDENTIFIER {    	  

@@ -6,4 +6,3 @@ test*.c
 y.output
 y.tab.c
 y.tab.h
-test.s
