@@ -1,4 +1,4 @@
-# compiler_design_hw
+# Compiler Design 2020 Homework
 
 University: National Tsing Hua University:
 
